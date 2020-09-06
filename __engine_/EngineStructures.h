@@ -1,0 +1,22 @@
+#pragma once
+#ifndef _ENGINESTRUCTURES_H_
+#define _ENGINESTRUCTURES_H_
+
+enum EngineMode {
+	RIBS_MODE,
+	LIGHT_OFF,
+	FLAT_SHADING,
+	GOURO_FILL
+};
+
+enum DoubleBuffered {
+	DOUBLE_BUFFERED_OFF,
+	DOUBLE_BUFFERED_ON
+};
+
+enum ChoiceOfCUDADevice {
+	SET_DEFAULT_CUDA_DEVICE,
+	CHOOSE_DEVICE
+};
+
+#endif
