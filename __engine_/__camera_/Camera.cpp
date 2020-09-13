@@ -5,7 +5,7 @@ static const float pi = 3.14159265;
 Camera::Camera() noexcept :
 
 	size_Of_projection_plane_(1920, 1080),
-	position_Of_observer_(0.0f, 0.5f, -1.5f),
+	position_Of_observer_(0.0f, 0.5f, -10.0f),
 	vector_x_(1.0f, 0.0f, 0.0f),
 	vector_y_(0.0f, 1.0f, 0.0f),
 	vector_z_(0.0f, 0.0f, 1.0f),

@@ -2,7 +2,7 @@
 #include "GraphicEngineCUDA.cuh"
 #include "__graphic_engine_/GraphicEngine.h"
 
-
+#include<iostream>
 void GraphicEngine::AllocateVertex2D() {
 
 	unsigned int vertexs2d_size = data_info_.numberOfVertexs * sizeof(Vertex2D);
@@ -65,6 +65,12 @@ __global__ void DrawLines(const Vertex2D* const vertexs_2d, const Polygon3D* con
 		int y1 = vertexs_2d[first_vertex_index].y;
 		const int x2 = vertexs_2d[second_vertex_index].x;
 		const int y2 = vertexs_2d[second_vertex_index].y;
+
+		printf("x1: %2d y1: %2d \n", x1, y1);
+
+		/*printf(" x2: %2d", x2);
+
+		printf("y2: %2d \n", y2);*/
 
 		const bool coordinats_are_correct = (x1 > 0 && x1 < display_width) && (x2 > 0 && x2 < display_width) && (y1 > 0 && y1 < display_height) && (y2 > 0 && y2 < display_height);
 
@@ -306,12 +312,41 @@ struct Proj_vertex {
 	float _z;
 
 };
-__global__ void DrawPolygons(z_mutex* z_buffer,RgbPixel* display_buffer, Vertex2D* vertexs_2d, Polygon3D* polygons, Vertex3D* vertexs_3d, unsigned int number_of_vertexs) {
+inline __device__ void swap(Proj_vertex& a, Proj_vertex& b) {
+
+	Proj_vertex temporary = b;
+	b = a;
+	a = temporary;
+
+}
+inline __device__ bool InPositiveHalfPlane(const Vertex2D& pixel, const Vertex2D& triangle_vertex, Vector2D& _normal) {
+
+	Vector2D pixel_vector;
+	pixel_vector.x = pixel.x - triangle_vertex.x;
+	pixel_vector.y = pixel.y - triangle_vertex.y;
+
+
+	Vector2D normal = _normal;
+	float length_n = sqrt(normal.x * normal.x + normal.y * normal.y);
+	normal.x /= length_n;
+	normal.y /= length_n;
+
+	float length_p = sqrt(pixel_vector.x * pixel_vector.x +  pixel_vector.y * pixel_vector.y);
+	pixel_vector.x /= length_p;
+	pixel_vector.y /=length_p;
+	float scalar = pixel_vector.x * normal.x + pixel_vector.y * normal.y;
+
+	if (scalar >= 0.0f) return true;
+	else 
+		return false;
+
+}
+__global__ void DrawPolygons(z_mutex* z_buffer,RgbPixel* display_buffer, Vertex2D* vertexs_2d, Polygon3D* polygons, Vertex3D* vertexs_3d, unsigned int number_of_polygons) {
 
 	int thread_index = threadIdx.x + blockDim.x * blockIdx.x;
 
-	if (thread_index < number_of_vertexs) {
-		printf("%d \n", thread_index);
+	if (thread_index < number_of_polygons) {
+		printf("%d", thread_index);
 		Polygon3D polygon = polygons[thread_index];
 
 		Proj_vertex proj_vertexs[3];
@@ -319,7 +354,9 @@ __global__ void DrawPolygons(z_mutex* z_buffer,RgbPixel* display_buffer, Vertex2
 		{
 
 			proj_vertexs[i].x = vertexs_2d[polygon.ratios[i].vertexNumber].x;
+			//printf("x: %2f", proj_vertexs[i].x);
 			proj_vertexs[i].y = vertexs_2d[polygon.ratios[i].vertexNumber].y;
+			//printf("y: %2f \n", proj_vertexs[i].y);
 			proj_vertexs[i]._z = 1.0f / vertexs_3d[polygon.ratios[i].vertexNumber].z;
 			
 		}
@@ -333,49 +370,89 @@ __global__ void DrawPolygons(z_mutex* z_buffer,RgbPixel* display_buffer, Vertex2
 			if (proj_vertexs[i].x > max_x) max_x = ceil(proj_vertexs[i].x);
 			if (proj_vertexs[i].y > max_y) max_y = ceil(proj_vertexs[i].y);
 		}
+		
+		RgbPixel polygon_color, _color;
 
-		printf("\n \n");
-		RgbPixel polygon_color;
-
-		polygon_color.rgb_red = 255;
-		polygon_color.rgb_blue = 0;
+		polygon_color.rgb_red = 0;
+		polygon_color.rgb_blue = 255;
 		polygon_color.rgb_green = 0;
 
+		_color.rgb_red = 100;
+		_color.rgb_blue = 100;
+		_color.rgb_green = 0;
+		//Sorting vertexs by y 2d coordinat
+
+		if (proj_vertexs[0].y < proj_vertexs[1].y) swap(proj_vertexs[0], proj_vertexs[1]);
+		if (proj_vertexs[1].y < proj_vertexs[2].y) swap(proj_vertexs[1], proj_vertexs[2]);
+		if (proj_vertexs[0].y < proj_vertexs[1].y) swap(proj_vertexs[0], proj_vertexs[1]);
+		
+		float length;
+		Vector2D bot_mid = {proj_vertexs[1].y - proj_vertexs[0].y, -proj_vertexs[1].x + proj_vertexs[0].x };
+		length = sqrt(bot_mid.x * bot_mid.x + bot_mid.y * bot_mid.y);
+		bot_mid.x /= length;
+		bot_mid.y /= length;
+
+		Vector2D mid_top = {proj_vertexs[2].y - proj_vertexs[1].y,  -proj_vertexs[2].x + proj_vertexs[1].x };
+		length = sqrt(mid_top.x * mid_top.x + mid_top.y * mid_top.y);
+		mid_top.x /= length;
+		mid_top.y /= length;
+
+		Vector2D top_bot = { proj_vertexs[0].y - proj_vertexs[2].y, -proj_vertexs[0].x + proj_vertexs[2].x, };
+		length = sqrt(top_bot.x * top_bot.x + top_bot.y * top_bot.y);
+		top_bot.x /= length;
+		top_bot.y /= length;
+
+		const Vertex2D bot = { proj_vertexs[0].x, proj_vertexs[0].y };
+		const Vertex2D mid = { proj_vertexs[1].x, proj_vertexs[1].y };
+		const Vertex2D top = { proj_vertexs[2].x, proj_vertexs[2].y };
+
+		//printf("bot: %2f, %2f, mid: %2f %2f, top: %2f %2f \n", bot.x, bot.y,mid.x, mid.y,top.x, top.y);
+		//printf("bot_mid: %2f %2f, mid_top: %2f %2f, top_bot: %2f %2f \n", bot_mid.x, bot_mid.y, mid_top.x, mid_top.y, top_bot.x, top_bot.y);
 		for (int y = min_y; y < max_y; y++)
 			for (int x = min_x; x < max_x; x++)
 			{
+				Vertex2D pixel;
+				pixel.x = ((float)x + 0.5f);
+				pixel.y = ((float)y + 0.5f);
+				
+				bool PixelInTriangle = InPositiveHalfPlane(pixel, bot, bot_mid) && InPositiveHalfPlane(pixel, mid, mid_top) && InPositiveHalfPlane(pixel, top, top_bot);
 
-				//	int index;
+				if (PixelInTriangle) {
+					//	int index;
 
-				//	for (int i = 0; i < 3; i++)
-				//		if (proj_vertexs[i].y < (float)y + 0.5f) index = i;
+					//	for (int i = 0; i < 3; i++)
+					//		if (proj_vertexs[i].y < (float)y + 0.5f) index = i;
 
-				//	float I[2];
-				//	int I_index = 0;
-				//	float xa, xb;
+					//	float I[2];
+					//	int I_index = 0;
+					//	float xa, xb;
 
-					//for (int i = 0; i < 3; i++)
-					//	if (proj_vertexs[i].y < proj_vertexs[index].y) {
-					//		float y1 = proj_vertexs[index].y;
-					//		float y2 = proj_vertexs[i].y;
-					//		float ys = (float)y + 0.5f;
-					//		I[I_index] = proj_vertexs[index]._z * ((ys - y2) / (y1 - y2)) + proj_vertexs[i]._z * (( y1 - ys) / (y1 - y2));
-					//		//xa = 
-					//		I_index++;
-					//	}			
+						//for (int i = 0; i < 3; i++)
+						//	if (proj_vertexs[i].y < proj_vertexs[index].y) {
+						//		float y1 = proj_vertexs[index].y;
+						//		float y2 = proj_vertexs[i].y;
+						//		float ys = (float)y + 0.5f;
+						//		I[I_index] = proj_vertexs[index]._z * ((ys - y2) / (y1 - y2)) + proj_vertexs[i]._z * (( y1 - ys) / (y1 - y2));
+						//		//xa = 
+						//		I_index++;
+						//	}			
 
-					//while ( (z_buffer + 1920 * y + x)->mutex == true ) continue;
+						while ( (z_buffer + 1920 * y + x)->mutex == true ) continue;
 
-				(z_buffer + 1920 * y + x)->mutex = true;
 
-				//if (1.0f / (z_buffer + 1920 * y + x)->z > _z) {
-				*(display_buffer + 1920 * y + x) = polygon_color;
-				//}
+					(z_buffer + 1920 * y + x)->mutex = true;
 
-				(z_buffer + 1920 * y + x)->mutex = false;
+					//if (1.0f / (z_buffer + 1920 * y + x)->z > _z) {
+					* (display_buffer + 1920 * y + x) = polygon_color;
+					//}
 
+					(z_buffer + 1920 * y + x)->mutex = false;
+				}
+	
+				
 			}
 	}
+	
 }
 
 void GraphicEngine::CreateFlatFrame() {
@@ -410,11 +487,10 @@ void GraphicEngine::CreateFlatFrame() {
 
 	number_of_blocks = (data_info_.numberOfPolygons * 3 + number_of_threads - 1) / number_of_threads;
 
-	DrawPolygons <<< number_of_blocks, number_of_threads >>> (z_mutex_, device_display_buffer_, device_vertexs_2d, device_polygons, device_vertexs_3d, data_info_.numberOfPolygons);
-	
-	//print_kernel <<<1,1 >>> ();
-	
-	//printf("jkasbvkjfs");
+	DrawPolygons <<< number_of_blocks, number_of_threads>> > (z_mutex_, device_display_buffer_, device_vertexs_2d, device_polygons, device_vertexs_3d, data_info_.numberOfPolygons);
+
+	//system("pause");
+
 }
 
 

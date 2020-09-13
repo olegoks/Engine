@@ -44,7 +44,7 @@ private:
 	DataInfo data_info_;
 	GpuDataPointers device_data_;
 	HWND window_handle_;
-
+	unsigned int threads_per_triangle = 3;
 
 	unsigned int display_height_ = 1080;
 	unsigned int display_width_ = 1920;

@@ -40,7 +40,10 @@ struct Coordinats3D {
 	float z;
 
 };
-
+struct Vector2D {
+	float x;
+	float y;
+};
 struct Vector3D {
 
 	inline Vector3D()noexcept : x(0.0f), y(0.0f), z(0.0f) {};

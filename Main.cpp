@@ -29,9 +29,9 @@ void processKeystrokes(KeyType key) {
 	if (key == D)engineTranslateModel(0, translate_vertex_right);
 	if (key == W)engineTranslateModel(0, translate_vertex_up);
 	if (key == S)engineTranslateModel(0, translate_vertex_down);
-
-	/*if (key == ArrowLeft)engineRotateModel(0, -10.0f, rotate_vector, rotate_vertex);
-	if (key == ArrowRight)engineRotateModel(0, 10.0f, rotate_vector, rotate_vertex);*/
+	//engineRotateModel(0, 0.1, rotate_vector, rotate_vertex);
+	if (key == ArrowLeft)engineRotateModel(0, -10.0f, rotate_vector, rotate_vertex);
+	if (key == ArrowRight)engineRotateModel(0, 10.0f, rotate_vector, rotate_vertex);
 	//if (key == WheelDown) engineScaleModel(0, 0.5);
 	//if (key == WheelUp) engineScaleModel(0, 1.5);
 
