@@ -21,11 +21,11 @@ struct Vertex2D {
 };
 
 //test
-struct z_element {
-	RgbPixel color;
+struct z_mutex {
 	float z;
 	bool mutex;
 };
+
 struct CameraInfo {
 	Vertex3D camera_pos;
 	Vector3D vector_x;
@@ -66,11 +66,14 @@ private:
 	bool* polygons_visibility;
 	void TestFunction();
 	CameraInfo GetCameraInfo();
-	z_element* z_buffer;
+
+	z_mutex* z_mutex_;
+	//RgbPixel* z_buffer_;
+
 	void AllocateZBuffer() {
 
-		cudaMalloc((void**)&z_buffer, display_height_ * display_width_ * sizeof(z_element));
-
+		cudaMalloc((void**)&z_mutex_, display_height_ * display_width_ * sizeof(z_mutex));
+		//cudaMalloc((void**)&z_buffer_, display_height_ * display_width_ * sizeof(RgbPixel));
 	}
 public:
 

@@ -58,7 +58,6 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	engineInitWindow(hInstance);
 	engineInitWindowSize(FULL_SCREEN, 1920, 1080);
 	engineLoad3DModel("__obj_models/Cube.obj", "body");
-	engineLoad3DModel("__obj_models/plane_2.obj", "body");
 	engineInitDisplayFunction(display);
 	engineInitSpecialFunction(processKeystrokes);
 	engineStartMainLoop();

@@ -47,7 +47,7 @@ private:
 	RgbPixel* host_display_buffer_;
 	void  ProcessKeyboardAndMouse();
 	void UpdateWorldLogic();
-	inline void RenderFrame() { graphic_engine_->CreateMeshFrame(); }
+	inline void RenderFrame() { graphic_engine_->CreateFlatFrame(); }
 	void DisplayFrame();
 	void PauseLoop()noexcept;
 	void StartLoop();

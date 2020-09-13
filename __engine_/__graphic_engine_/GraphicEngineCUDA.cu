@@ -298,23 +298,84 @@ void GraphicEngine::CreateMeshFrame() {
 
 }
 
-__global__ void DrawPolygons(z_element* z_buffer, Vertex2D* vertexs_2d, Polygon3D* polygons, Vertex3D* vertexs_3d) {
+
+struct Proj_vertex {
+
+	float x;
+	float y;
+	float _z;
+
+};
+__global__ void DrawPolygons(z_mutex* z_buffer,RgbPixel* display_buffer, Vertex2D* vertexs_2d, Polygon3D* polygons, Vertex3D* vertexs_3d, unsigned int number_of_vertexs) {
 
 	int thread_index = threadIdx.x + blockDim.x * blockIdx.x;
 
-	Polygon3D polygon = polygons[thread_index];
+	if (thread_index < number_of_vertexs) {
+		printf("%d \n", thread_index);
+		Polygon3D polygon = polygons[thread_index];
 
-	Vertex2D f_vertex_2d = vertexs_2d[polygon.ratios[0].vertexNumber];
-	float f_z = vertexs_3d[polygon.ratios[0].vertexNumber].z;
+		Proj_vertex proj_vertexs[3];
+		for (int i = 0; i < 3; i++)
+		{
 
-	Vertex2D s_vertex_2d = vertexs_2d[polygon.ratios[1].vertexNumber];
-	float s_z = vertexs_3d[polygon.ratios[1].vertexNumber].z;
+			proj_vertexs[i].x = vertexs_2d[polygon.ratios[i].vertexNumber].x;
+			proj_vertexs[i].y = vertexs_2d[polygon.ratios[i].vertexNumber].y;
+			proj_vertexs[i]._z = 1.0f / vertexs_3d[polygon.ratios[i].vertexNumber].z;
+			
+		}
 
-	Vertex2D t_vertex_2d = vertexs_2d[polygon.ratios[2].vertexNumber];
-	float t_z = vertexs_3d[polygon.ratios[2].vertexNumber].z;
+		int min_x = 10000, min_y = 10000, max_x = -1, max_y = -1;
 
+		for (int i = 0; i < 3; i++)
+		{
+			if (proj_vertexs[i].x < min_x) min_x = floor(proj_vertexs[i].x);
+			if (proj_vertexs[i].y < min_y) min_y = floor(proj_vertexs[i].y);
+			if (proj_vertexs[i].x > max_x) max_x = ceil(proj_vertexs[i].x);
+			if (proj_vertexs[i].y > max_y) max_y = ceil(proj_vertexs[i].y);
+		}
 
+		printf("\n \n");
+		RgbPixel polygon_color;
 
+		polygon_color.rgb_red = 255;
+		polygon_color.rgb_blue = 0;
+		polygon_color.rgb_green = 0;
+
+		for (int y = min_y; y < max_y; y++)
+			for (int x = min_x; x < max_x; x++)
+			{
+
+				//	int index;
+
+				//	for (int i = 0; i < 3; i++)
+				//		if (proj_vertexs[i].y < (float)y + 0.5f) index = i;
+
+				//	float I[2];
+				//	int I_index = 0;
+				//	float xa, xb;
+
+					//for (int i = 0; i < 3; i++)
+					//	if (proj_vertexs[i].y < proj_vertexs[index].y) {
+					//		float y1 = proj_vertexs[index].y;
+					//		float y2 = proj_vertexs[i].y;
+					//		float ys = (float)y + 0.5f;
+					//		I[I_index] = proj_vertexs[index]._z * ((ys - y2) / (y1 - y2)) + proj_vertexs[i]._z * (( y1 - ys) / (y1 - y2));
+					//		//xa = 
+					//		I_index++;
+					//	}			
+
+					//while ( (z_buffer + 1920 * y + x)->mutex == true ) continue;
+
+				(z_buffer + 1920 * y + x)->mutex = true;
+
+				//if (1.0f / (z_buffer + 1920 * y + x)->z > _z) {
+				*(display_buffer + 1920 * y + x) = polygon_color;
+				//}
+
+				(z_buffer + 1920 * y + x)->mutex = false;
+
+			}
+	}
 }
 
 void GraphicEngine::CreateFlatFrame() {
@@ -327,14 +388,16 @@ void GraphicEngine::CreateFlatFrame() {
 
 	const float distance_to_projection_plane = camera_->GetDistanceToProjPlane();
 
-	const Vertex3D* const device_vertexs_3d = device_data_.deviceVertexs;
+	Vertex3D* const device_vertexs_3d = device_data_.deviceVertexs;
 	Vertex2D* const device_vertexs_2d = device_vertexs_2d_;
-	const Polygon3D* const device_polygons = device_data_.devicePolygons;
+	Polygon3D* const device_polygons = device_data_.devicePolygons;
 
 	RgbColor color;
 	color.rgb_blue = 20;
 	color.rgb_green = 255;
 	color.rgb_red = 0;
+
+	cudaMemset(z_mutex_, 0, 1920 * 1080 * sizeof(z_mutex));
 
 	const unsigned int number_of_threads = 1024;
 	unsigned int number_of_blocks = (data_info_.numberOfVertexs + number_of_threads - 1) / number_of_threads;
@@ -347,8 +410,11 @@ void GraphicEngine::CreateFlatFrame() {
 
 	number_of_blocks = (data_info_.numberOfPolygons * 3 + number_of_threads - 1) / number_of_threads;
 
-	DrawPolygons <<<number_of_blocks, number_of_threads >>> ();
-
+	DrawPolygons <<< number_of_blocks, number_of_threads >>> (z_mutex_, device_display_buffer_, device_vertexs_2d, device_polygons, device_vertexs_3d, data_info_.numberOfPolygons);
+	
+	//print_kernel <<<1,1 >>> ();
+	
+	//printf("jkasbvkjfs");
 }
 
 
