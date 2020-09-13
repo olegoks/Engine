@@ -346,7 +346,7 @@ __global__ void DrawPolygons(z_mutex* z_buffer,RgbPixel* display_buffer, Vertex2
 	int thread_index = threadIdx.x + blockDim.x * blockIdx.x;
 
 	if (thread_index < number_of_polygons) {
-		printf("%d", thread_index);
+		//printf("%d", thread_index);
 		Polygon3D polygon = polygons[thread_index];
 
 		Proj_vertex proj_vertexs[3];
@@ -382,12 +382,28 @@ __global__ void DrawPolygons(z_mutex* z_buffer,RgbPixel* display_buffer, Vertex2
 		_color.rgb_green = 0;
 		//Sorting vertexs by y 2d coordinat
 
-		if (proj_vertexs[0].y < proj_vertexs[1].y) swap(proj_vertexs[0], proj_vertexs[1]);
-		if (proj_vertexs[1].y < proj_vertexs[2].y) swap(proj_vertexs[1], proj_vertexs[2]);
-		if (proj_vertexs[0].y < proj_vertexs[1].y) swap(proj_vertexs[0], proj_vertexs[1]);
+		//Clockwise direction
+		Vertex2D AToB;
+		AToB.x = proj_vertexs[1].x - proj_vertexs[0].x;
+		AToB.y = proj_vertexs[1].y - proj_vertexs[0].y;
+		Vertex2D BToC;
+		BToC.x = proj_vertexs[2].x - proj_vertexs[1].x;
+		BToC.y = proj_vertexs[2].y - proj_vertexs[1].y;
+
+		float crossz = AToB.x * BToC.y - AToB.y * BToC.x;
+		if (crossz > 0.0f)
+		{
+			Proj_vertex temporary = proj_vertexs[2];
+			proj_vertexs[2] = proj_vertexs[1];
+			proj_vertexs[1] = temporary;
+		}
+	
+		//if (proj_vertexs[0].x > proj_vertexs[1].x) swap(proj_vertexs[0], proj_vertexs[1]);
+		//if (proj_vertexs[0].x > proj_vertexs[2].x) swap(proj_vertexs[0], proj_vertexs[2]);
+		//if (proj_vertexs[1].x > proj_vertexs[2].x) swap(proj_vertexs[1], proj_vertexs[2]);
 		
 		float length;
-		Vector2D bot_mid = {proj_vertexs[1].y - proj_vertexs[0].y, -proj_vertexs[1].x + proj_vertexs[0].x };
+		Vector2D bot_mid = { proj_vertexs[1].y - proj_vertexs[0].y, -proj_vertexs[1].x + proj_vertexs[0].x };
 		length = sqrt(bot_mid.x * bot_mid.x + bot_mid.y * bot_mid.y);
 		bot_mid.x /= length;
 		bot_mid.y /= length;
@@ -437,7 +453,7 @@ __global__ void DrawPolygons(z_mutex* z_buffer,RgbPixel* display_buffer, Vertex2
 						//		I_index++;
 						//	}			
 
-						while ( (z_buffer + 1920 * y + x)->mutex == true ) continue;
+						//while ( (z_buffer + 1920 * y + x)->mutex == true ) continue;
 
 
 					(z_buffer + 1920 * y + x)->mutex = true;
@@ -474,7 +490,7 @@ void GraphicEngine::CreateFlatFrame() {
 	color.rgb_green = 255;
 	color.rgb_red = 0;
 
-	cudaMemset(z_mutex_, 0, 1920 * 1080 * sizeof(z_mutex));
+	cudaMemset(z_mutex_, 0, display_width_ * display_height_ * sizeof(z_mutex));
 
 	const unsigned int number_of_threads = 1024;
 	unsigned int number_of_blocks = (data_info_.numberOfVertexs + number_of_threads - 1) / number_of_threads;
@@ -487,7 +503,7 @@ void GraphicEngine::CreateFlatFrame() {
 
 	number_of_blocks = (data_info_.numberOfPolygons * 3 + number_of_threads - 1) / number_of_threads;
 
-	DrawPolygons <<< number_of_blocks, number_of_threads>> > (z_mutex_, device_display_buffer_, device_vertexs_2d, device_polygons, device_vertexs_3d, data_info_.numberOfPolygons);
+	DrawPolygons << < number_of_blocks, number_of_threads >> > (z_mutex_, device_display_buffer_, device_vertexs_2d, device_polygons, device_vertexs_3d, data_info_.numberOfPolygons);
 
 	//system("pause");
 
