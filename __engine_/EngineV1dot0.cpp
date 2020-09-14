@@ -134,8 +134,9 @@ void Engine::StartMainLoop() {
 		graphic_engine_->SetHostDisplayBuffer(memory_manager_cpu_->GetDisplayBufferPointer());
 		graphic_engine_->SetDeviceDataPointers(memory_manager_gpu_->GetDeviceData());
 		logic_engine_->LoadDeviceData(memory_manager_gpu_->GetDeviceData());
+		
 		main_loop_thread_ = std::thread{&Engine::StartLoop, this };
-
+		this->display_function_();
 	}
 
 	catch (DataBase::LoadFilesException load_file_error) {

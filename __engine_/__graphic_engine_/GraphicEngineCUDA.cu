@@ -20,7 +20,7 @@ __global__ void ProjectVertexs(const Vertex3D* const vertexs_3d, Vertex2D* const
 	if (threadIndex < number_of_vertexs) {
 
 		//Offset
-
+	
 		float offset_x = vertexs_3d[threadIndex].x - cameraPosition.x;
 		float offset_y = vertexs_3d[threadIndex].y - cameraPosition.y;
 		float offset_z = vertexs_3d[threadIndex].z - cameraPosition.z;
@@ -48,7 +48,7 @@ __global__ void ConvertInDisplayCoordinats(Vertex2D* const vertexs_2d, const uns
 	}
 
 }
-__global__ void DrawLines(const Vertex2D* const vertexs_2d, const Polygon3D* const device_polygons, const unsigned int number_of_polygons, RgbPixel* const display_buffer, const unsigned int display_width, const unsigned int display_height) {
+__global__ void DrawLines(const Vertex2D* const vertexs_2d, const Polygon3D* const device_polygons, const Normal3D* normals, const unsigned int number_of_polygons, RgbPixel* const display_buffer, const unsigned int display_width, const unsigned int display_height, Vector3D camera_dir) {
 
 	int threadIndex = threadIdx.x + blockIdx.x * blockDim.x;
 
@@ -56,60 +56,59 @@ __global__ void DrawLines(const Vertex2D* const vertexs_2d, const Polygon3D* con
 
 		const unsigned int polygon_number = threadIndex / 3;
 		const unsigned int vertex_number = threadIndex % 3;
-	
-		const unsigned int first_vertex_index = device_polygons[polygon_number].ratios[vertex_number].vertexNumber;
-		const unsigned int second_vertex_number = ((vertex_number + 1) < 3) ? (vertex_number + 1) : 0;
-		const unsigned int second_vertex_index = device_polygons[polygon_number].ratios[second_vertex_number].vertexNumber ;
+		
+		Normal3D normal = normals[ device_polygons[polygon_number].ratios[vertex_number].normalNumber];
+		float scalar = camera_dir.x * normal.x + camera_dir.y * normal.y + camera_dir.z * normal.z;
+		if (scalar >= 0.0f) {
 
-		int x1 = vertexs_2d[first_vertex_index ].x;
-		int y1 = vertexs_2d[first_vertex_index].y;
-		const int x2 = vertexs_2d[second_vertex_index].x;
-		const int y2 = vertexs_2d[second_vertex_index].y;
+			const unsigned int first_vertex_index = device_polygons[polygon_number].ratios[vertex_number].vertexNumber;
+			const unsigned int second_vertex_number = ((vertex_number + 1) < 3) ? (vertex_number + 1) : 0;
+			const unsigned int second_vertex_index = device_polygons[polygon_number].ratios[second_vertex_number].vertexNumber;
 
-		printf("x1: %2d y1: %2d \n", x1, y1);
+			int x1 = vertexs_2d[first_vertex_index].x;
+			int y1 = vertexs_2d[first_vertex_index].y;
+			const int x2 = vertexs_2d[second_vertex_index].x;
+			const int y2 = vertexs_2d[second_vertex_index].y;
 
-		/*printf(" x2: %2d", x2);
+			const bool coordinats_are_correct = (x1 > 0 && x1 < display_width) && (x2 > 0 && x2 < display_width) && (y1 > 0 && y1 < display_height) && (y2 > 0 && y2 < display_height);
 
-		printf("y2: %2d \n", y2);*/
+			if (coordinats_are_correct) {
 
-		const bool coordinats_are_correct = (x1 > 0 && x1 < display_width) && (x2 > 0 && x2 < display_width) && (y1 > 0 && y1 < display_height) && (y2 > 0 && y2 < display_height);
-
-		if (coordinats_are_correct) {
-
-			const int deltaX = abs(x2 - x1);
-			const int deltaY = abs(y2 - y1);
-			const int signX = x1 < x2 ? 1 : -1;
-			const int signY = y1 < y2 ? 1 : -1;
-			//
-			int error = deltaX - deltaY;
-
-			display_buffer[display_width * y2 + x2].rgb_reserved = 0;
-			display_buffer[display_width * y2 + x2].rgb_red = 255;
-			display_buffer[display_width * y2 + x2].rgb_green = 0;
-			display_buffer[display_width * y2 + x2].rgb_blue = 0;
-
-			while (x1 != x2 || y1 != y2)
-			{
-
-				display_buffer[display_width * y1 + x1].rgb_reserved = 0;
-				display_buffer[display_width * y1 + x1].rgb_red = 255;
-				display_buffer[display_width * y1 + x1].rgb_green = 0;
-				display_buffer[display_width * y1 + x1].rgb_blue = 0;
-
-				const int error2 = error * 2;
+				const int deltaX = abs(x2 - x1);
+				const int deltaY = abs(y2 - y1);
+				const int signX = x1 < x2 ? 1 : -1;
+				const int signY = y1 < y2 ? 1 : -1;
 				//
-				if (error2 > -deltaY)
-				{
-					error -= deltaY;
-					x1 += signX;
-				}
+				int error = deltaX - deltaY;
 
-				if (error2 < deltaX)
-				{
-					error += deltaX;
-					y1 += signY;
-				}
+				display_buffer[display_width * y2 + x2].rgb_reserved = 0;
+				display_buffer[display_width * y2 + x2].rgb_red = 255;
+				display_buffer[display_width * y2 + x2].rgb_green = 0;
+				display_buffer[display_width * y2 + x2].rgb_blue = 0;
 
+				while (x1 != x2 || y1 != y2)
+				{
+
+					display_buffer[display_width * y1 + x1].rgb_reserved = 0;
+					display_buffer[display_width * y1 + x1].rgb_red = 255;
+					display_buffer[display_width * y1 + x1].rgb_green = 0;
+					display_buffer[display_width * y1 + x1].rgb_blue = 0;
+
+					const int error2 = error * 2;
+					//
+					if (error2 > -deltaY)
+					{
+						error -= deltaY;
+						x1 += signX;
+					}
+
+					if (error2 < deltaX)
+					{
+						error += deltaX;
+						y1 += signY;
+					}
+
+				}
 			}
 		}
 	}
@@ -273,7 +272,7 @@ void GraphicEngine::CreateMeshFrame() {
 	const Vertex3D* const device_vertexs_3d = device_data_.deviceVertexs;
 	Vertex2D* const device_vertexs_2d = device_vertexs_2d_;
 	const Polygon3D* const device_polygons = device_data_.devicePolygons;
-
+	Normal3D* device_normals = device_data_.deviceNormals;
 	
 	RgbColor color;
 	color.rgb_blue = 20;
@@ -291,7 +290,7 @@ void GraphicEngine::CreateMeshFrame() {
 
 	number_of_blocks = (data_info_.numberOfPolygons * 3 + number_of_threads - 1) / number_of_threads;
 
-	DrawLines <<<number_of_blocks, number_of_threads >>> (device_vertexs_2d, device_polygons, data_info_.numberOfPolygons, device_display_buffer_, display_width_, display_height_);	
+	DrawLines <<<number_of_blocks, number_of_threads >>> (device_vertexs_2d, device_polygons, device_normals, data_info_.numberOfPolygons, device_display_buffer_, display_width_, display_height_,vector_z);	
 
 	//cudaMemcpy((void**)host_display_buffer_, device_display_buffer_, display_buffer_size_, cudaMemcpyDeviceToHost);
 	//const Vertex3D* const host_vertexs_3d = data_info_.allVertexs;

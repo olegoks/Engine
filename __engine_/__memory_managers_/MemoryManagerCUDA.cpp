@@ -47,8 +47,6 @@ void MemoryManagerGPU::AllocateMemoryForPrimitives() {
 		host_data_info_.allModels[index].device_colors_pointer = dev_colors_ptr;
 		dev_polygons_ptr += host_data_info_.allModels[index].numberOfColors;
 
-		index++;
-
 	}
 
 	
