@@ -23,7 +23,9 @@ void LogicEngine::UpdateWorldLogic() {
 	unsigned int number_of_keystrokes = keystroke_buffer_.size();
 
 	unsigned int index = 0;
+	logic_function();
 	//there is the bag: size returned 2, but real size is 1? and that is why Range out exception in vector.
+	
 	while ( (index < number_of_keystrokes) && (keystroke_buffer_[index].time_point < this->previous_keyboard_process_ + 20)) {
 
 		special_function_(keystroke_buffer_[index].key_type);

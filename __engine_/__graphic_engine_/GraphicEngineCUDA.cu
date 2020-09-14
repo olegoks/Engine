@@ -59,7 +59,8 @@ __global__ void DrawLines(const Vertex2D* const vertexs_2d, const Polygon3D* con
 		
 		Normal3D normal = normals[ device_polygons[polygon_number].ratios[vertex_number].normalNumber];
 		float scalar = camera_dir.x * normal.x + camera_dir.y * normal.y + camera_dir.z * normal.z;
-		if (scalar >= 0.0f) {
+		//if (scalar <= 0.0f) 
+		{
 
 			const unsigned int first_vertex_index = device_polygons[polygon_number].ratios[vertex_number].vertexNumber;
 			const unsigned int second_vertex_number = ((vertex_number + 1) < 3) ? (vertex_number + 1) : 0;

@@ -97,7 +97,10 @@ void engineInitSpecialFunction(SpecialFunction func)
 	engine->InitSpecialFunction(func);
 
 }
+void engineInitLogicFunction(LogicFunction func) {
 
+	engine->InitLogicFunction(func);
+}
 const Vertex3D* engineGetCameraPosition(const unsigned int camera_id)
 {
 	return engine->GetCameraPosition(camera_id);

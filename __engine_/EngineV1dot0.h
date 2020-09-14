@@ -70,6 +70,7 @@ public:
 	bool InitWindowSize(SizeMode size_mode, const unsigned int length, const unsigned int width);
 	void InitWindow(HINSTANCE windowHandle);
 	void InitSpecialFunction(SpecialFunction func);
+	void InitLogicFunction(LogicFunction func);
 	void ShowWindow(const char* windowHandle);
 	void StartMainLoop();
 	void InitDisplayFunction(DisplayFunction display);

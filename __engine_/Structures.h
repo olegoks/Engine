@@ -32,7 +32,7 @@ struct Keystroke {
 
 typedef void(*DisplayFunction)(void);
 typedef void(*SpecialFunction)(KeyType);
-
+typedef void(*LogicFunction)(void);
 struct Coordinats3D {
 
 	float x;

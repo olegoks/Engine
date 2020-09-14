@@ -2,7 +2,7 @@
 #ifndef _CAMERA_H_
 #define _CAMERA_H_
 
-#include "Structures.h"
+#include "D:\C++\ProjectEngine\__engine_\Structures.h"
 #include <cmath>
 
 struct SizeOfProjectionPlane {

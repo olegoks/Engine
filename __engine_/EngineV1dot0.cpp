@@ -277,6 +277,9 @@ void Engine::InitSpecialFunction(SpecialFunction func) {
 	logic_engine_->InitSpecialFunction(func);
 
 }
+void Engine::InitLogicFunction(LogicFunction func) {
+	logic_engine_->InitLogicFunction(func);
+}
 void Engine::InitWindow(HINSTANCE windowHandle) {
 
 	window_ = (wnd::Window*) new wnd::Window(windowHandle);

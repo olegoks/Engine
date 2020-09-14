@@ -7,11 +7,11 @@
 #include <cstdlib>
 #include <thread>
 #include <windows.h>
-#include "__camera_/Camera.h"
-#include "__logic_engine_/LogicEngine.h"
+#include "__camera_\Camera.h"
+#include "__logic_engine_\LogicEngine.h"
 #include "EngineStructures.h"
-#include "__window_/WindowStructures.h"
-#include "GraphicEngineCUDA.cuh"
+#include "__window_\WindowStructures.h"
+#include "__graphic_engine_\GraphicEngineCUDA.cuh"
 #include "cuda_runtime_api.h"
 
 struct Vertex2D {

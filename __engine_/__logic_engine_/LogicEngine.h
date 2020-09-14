@@ -28,6 +28,7 @@ private:
 	GpuDataPointers device_data_;
 	std::vector<Keystroke> keystroke_buffer_;
 	SpecialFunction special_function_;
+	LogicFunction logic_function;
 	unsigned int previous_keyboard_process_;
 	unsigned int time_per_update_logic_;
 
@@ -39,6 +40,7 @@ public:
 	void SetTimePerUpdateLogic(const unsigned int time_per_update_logic)noexcept { time_per_update_logic_ = time_per_update_logic; };
 	inline void SetPreviousKeyboardProcess(unsigned int time_point) noexcept { previous_keyboard_process_ = time_point; };
 	inline void InitSpecialFunction(SpecialFunction func) noexcept { special_function_ = func; };
+	inline void InitLogicFunction(LogicFunction func) noexcept { logic_function = func; }
 	inline void StartEngine()noexcept { this->engine_is_running_ = true; };
 	inline void PauseEngine()noexcept { this->engine_is_running_ = false; };
 	inline void SetCamera(Camera* camera_) { this->camera_ = camera_; };

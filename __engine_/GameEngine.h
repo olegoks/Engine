@@ -18,6 +18,7 @@
 	void engineScaleModel(const unsigned int model_id, const float coefficient);
 	void engineTranslateCamera(const unsigned int camera_id, const Vertex3D &delta_vertex);
 	void engineRotateCamera(const unsigned int camera_id, const float alpha_degree, const Vector3D& rotate_vector, const Vertex3D &rotate_vertex);
+	void engineInitLogicFunction(LogicFunction func);
 	void engineInitSpecialFunction(SpecialFunction func);
 	const Vertex3D* engineGetCameraPosition(const unsigned int camera_id);
 	Vector3D engineCalculateVector(const Vertex3D* const begin, const Vertex3D* const end);
