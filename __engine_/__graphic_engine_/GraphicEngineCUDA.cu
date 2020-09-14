@@ -341,13 +341,23 @@ inline __device__ bool InPositiveHalfPlane(const Vertex2D& pixel, const Vertex2D
 		return false;
 
 }
-__global__ void DrawPolygons(z_mutex* z_buffer,RgbPixel* display_buffer, Vertex2D* vertexs_2d, Polygon3D* polygons, Vertex3D* vertexs_3d, unsigned int number_of_polygons) {
+
+struct InfoForPainting {
+	Vertex3D* d_vertexs;
+	Polygon3D* d_polygons;
+	unsigned int number_of_polygons;
+	RgbPixel* d_rgb;
+	unsigned int number_of_colors;
+
+};
+
+__global__ void DrawPolygons(z_mutex* z_buffer,RgbPixel* display_buffer, Vertex2D* vertexs_2d, InfoForPainting info) {
 
 	int thread_index = threadIdx.x + blockDim.x * blockIdx.x;
 
-	if (thread_index < number_of_polygons) {
+	if (thread_index < info.number_of_polygons) {
 		//printf("%d", thread_index);
-		Polygon3D polygon = polygons[thread_index];
+		Polygon3D polygon = info.d_polygons[thread_index];
 
 		Proj_vertex proj_vertexs[3];
 		for (int i = 0; i < 3; i++)
@@ -357,7 +367,7 @@ __global__ void DrawPolygons(z_mutex* z_buffer,RgbPixel* display_buffer, Vertex2
 			//printf("x: %2f", proj_vertexs[i].x);
 			proj_vertexs[i].y = vertexs_2d[polygon.ratios[i].vertexNumber].y;
 			//printf("y: %2f \n", proj_vertexs[i].y);
-			proj_vertexs[i]._z = 1.0f / vertexs_3d[polygon.ratios[i].vertexNumber].z;
+			proj_vertexs[i]._z = 1.0f / info.d_vertexs[polygon.ratios[i].vertexNumber].z;
 			
 		}
 
@@ -371,15 +381,11 @@ __global__ void DrawPolygons(z_mutex* z_buffer,RgbPixel* display_buffer, Vertex2
 			if (proj_vertexs[i].y > max_y) max_y = ceil(proj_vertexs[i].y);
 		}
 		
-		RgbPixel polygon_color, _color;
-
-		polygon_color.rgb_red = 0;
-		polygon_color.rgb_blue = 255;
+		RgbPixel polygon_color = info.d_rgb[thread_index /2];
+		/*polygon_color.rgb_blue = 0;
 		polygon_color.rgb_green = 0;
-
-		_color.rgb_red = 100;
-		_color.rgb_blue = 100;
-		_color.rgb_green = 0;
+		polygon_color.rgb_red = 255;*/
+		
 		//Sorting vertexs by y 2d coordinat
 
 		//Clockwise direction
@@ -434,28 +440,11 @@ __global__ void DrawPolygons(z_mutex* z_buffer,RgbPixel* display_buffer, Vertex2
 				bool PixelInTriangle = InPositiveHalfPlane(pixel, bot, bot_mid) && InPositiveHalfPlane(pixel, mid, mid_top) && InPositiveHalfPlane(pixel, top, top_bot);
 
 				if (PixelInTriangle) {
-					//	int index;
+						
+								
+					//Vertex3D bot, mid, top;
 
-					//	for (int i = 0; i < 3; i++)
-					//		if (proj_vertexs[i].y < (float)y + 0.5f) index = i;
-
-					//	float I[2];
-					//	int I_index = 0;
-					//	float xa, xb;
-
-						//for (int i = 0; i < 3; i++)
-						//	if (proj_vertexs[i].y < proj_vertexs[index].y) {
-						//		float y1 = proj_vertexs[index].y;
-						//		float y2 = proj_vertexs[i].y;
-						//		float ys = (float)y + 0.5f;
-						//		I[I_index] = proj_vertexs[index]._z * ((ys - y2) / (y1 - y2)) + proj_vertexs[i]._z * (( y1 - ys) / (y1 - y2));
-						//		//xa = 
-						//		I_index++;
-						//	}			
-
-						//while ( (z_buffer + 1920 * y + x)->mutex == true ) continue;
-
-
+					while ( (z_buffer + 1920 * y + x)->mutex == true ) continue;
 					(z_buffer + 1920 * y + x)->mutex = true;
 
 					//if (1.0f / (z_buffer + 1920 * y + x)->z > _z) {
@@ -501,9 +490,12 @@ void GraphicEngine::CreateFlatFrame() {
 
 	ConvertInDisplayCoordinats <<<number_of_blocks, number_of_threads >>> (device_vertexs_2d, data_info_.numberOfVertexs, display_width_, display_height_);
 
-	number_of_blocks = (data_info_.numberOfPolygons * 3 + number_of_threads - 1) / number_of_threads;
+	number_of_blocks = (data_info_.numberOfPolygons * threads_per_triangle_ + number_of_threads - 1) / number_of_threads;
 
-	DrawPolygons << < number_of_blocks, number_of_threads >> > (z_mutex_, device_display_buffer_, device_vertexs_2d, device_polygons, device_vertexs_3d, data_info_.numberOfPolygons);
+
+	InfoForPainting info = { device_vertexs_3d, device_polygons, data_info_.numberOfPolygons, (RgbPixel*)device_data_.device_colors, data_info_.numberOfRgbColors };
+	printf("%d", data_info_.numberOfRgbColors);
+	DrawPolygons <<< number_of_blocks, number_of_threads >> > (z_mutex_, device_display_buffer_, device_vertexs_2d, info);
 
 	//system("pause");
 

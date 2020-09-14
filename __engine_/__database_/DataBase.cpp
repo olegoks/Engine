@@ -114,10 +114,13 @@ bool DataBase::LoadObjFile(const char* file_name) {
 	newArrayOfModels[newSizeOfArrayOfModels - 1].numberOfNormals = obj_file.GetNumberOfNormals();
 	newArrayOfModels[newSizeOfArrayOfModels - 1].numberOfPolygons = obj_file.GetNumberOfPolygons();
 	newArrayOfModels[newSizeOfArrayOfModels - 1].numberOfVertexs = obj_file.GetNumberOfVertexs();
+	newArrayOfModels[newSizeOfArrayOfModels - 1].numberOfColors = obj_file.GetNumberOfRgbColors();
+
 	newArrayOfModels[newSizeOfArrayOfModels - 1].model_name = nullptr; //<<<<<<<<<<<<<<<<<<<<<<<<<<<
 	newArrayOfModels[newSizeOfArrayOfModels - 1].vertexs_pointer = data_info_.allVertexs + data_info_.numberOfVertexs - obj_file.GetNumberOfVertexs();
 	newArrayOfModels[newSizeOfArrayOfModels - 1].normals_pointer = data_info_.allNormals + data_info_.numberOfNormals - obj_file.GetNumberOfNormals();
 	newArrayOfModels[newSizeOfArrayOfModels - 1].polygons_pointer = data_info_.allPolygons + data_info_.numberOfPolygons - obj_file.GetNumberOfPolygons();
+	newArrayOfModels[newSizeOfArrayOfModels - 1].colors_pointer = data_info_.allRgbColors + data_info_.numberOfRgbColors - obj_file.GetNumberOfRgbColors();
 	
 	delete[] this->data_info_.allModels;
 	this->data_info_.allModels = newArrayOfModels;

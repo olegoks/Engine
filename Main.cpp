@@ -2,6 +2,23 @@
 #include "GameEngine.h"
 #include <iostream>
 
+enum ObjectType {
+	NOTHING,
+	WALL
+};
+class map {
+private:
+	
+	const unsigned int size_x_ = 10;
+	const unsigned int size_y_ = 10;
+	ObjectType* array;
+
+public:
+	map() {
+		array = (ObjectType*) new ObjectType[10][10];
+	}
+
+};
 
 void display() {
 
@@ -57,7 +74,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	engineInitDisplayMode(RIBS_MODE, DOUBLE_BUFFERED_ON);
 	engineInitWindow(hInstance);
 	engineInitWindowSize(FULL_SCREEN, 1920, 1080);
-	engineLoad3DModel("__obj_models/manbody.obj", "body");
+	engineLoad3DModel("__obj_models/ColorCube-2.obj", "body");
 	engineInitDisplayFunction(display);
 	engineInitSpecialFunction(processKeystrokes);
 	engineStartMainLoop();

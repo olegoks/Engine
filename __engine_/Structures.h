@@ -107,14 +107,17 @@ struct ModelInfo3D {
 	longSize numberOfVertexs;
 	longSize numberOfNormals;
 	longSize numberOfPolygons;
-	
+	longSize numberOfColors;
+
 	Vertex3D* vertexs_pointer;
 	Normal3D* normals_pointer;
 	Polygon3D* polygons_pointer;
+	RgbColor* colors_pointer;
 
 	Vertex3D* device_vertexs_pointer;
 	Normal3D* device_normals_pointer;
 	Polygon3D* device_polygons_pointer;
+	RgbColor* device_colors_pointer;
 
 	inline ModelInfo3D()noexcept :
 		numberOfVertexs(0), 
@@ -185,6 +188,7 @@ struct GpuDataPointers {
 	Vertex3D* deviceVertexs;
 	Normal3D* deviceNormals;
 	Polygon3D* devicePolygons;
+	RgbColor* device_colors;
 
 };
 
