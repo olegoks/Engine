@@ -404,9 +404,7 @@ __global__ void DrawPolygons(z_mutex* z_buffer,RgbPixel* display_buffer, Vertex2
 			proj_vertexs[1] = temporary;
 		}
 	
-		//if (proj_vertexs[0].x > proj_vertexs[1].x) swap(proj_vertexs[0], proj_vertexs[1]);
-		//if (proj_vertexs[0].x > proj_vertexs[2].x) swap(proj_vertexs[0], proj_vertexs[2]);
-		//if (proj_vertexs[1].x > proj_vertexs[2].x) swap(proj_vertexs[1], proj_vertexs[2]);
+		
 		
 		float length;
 		Vector2D bot_mid = { proj_vertexs[1].y - proj_vertexs[0].y, -proj_vertexs[1].x + proj_vertexs[0].x };
@@ -440,9 +438,15 @@ __global__ void DrawPolygons(z_mutex* z_buffer,RgbPixel* display_buffer, Vertex2
 				bool PixelInTriangle = InPositiveHalfPlane(pixel, bot, bot_mid) && InPositiveHalfPlane(pixel, mid, mid_top) && InPositiveHalfPlane(pixel, top, top_bot);
 
 				if (PixelInTriangle) {
-						
-								
-					//Vertex3D bot, mid, top;
+
+					Proj_vertex p_vertexs[3];
+					for (int i = 0; i < length; i++) p_vertexs[i] = proj_vertexs[i];
+					if (p_vertexs[0].x > p_vertexs[1].x) swap(p_vertexs[0], p_vertexs[1]);
+					if (p_vertexs[0].x > p_vertexs[2].x) swap(p_vertexs[0], p_vertexs[2]);
+					if (p_vertexs[1].x > p_vertexs[2].x) swap(p_vertexs[1], p_vertexs[2]);
+
+
+
 
 					while ( (z_buffer + 1920 * y + x)->mutex == true ) continue;
 					(z_buffer + 1920 * y + x)->mutex = true;
