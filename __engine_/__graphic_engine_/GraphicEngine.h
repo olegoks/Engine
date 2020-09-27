@@ -44,7 +44,7 @@ private:
 	DataInfo data_info_;
 	GpuDataPointers device_data_;
 	HWND window_handle_;
-	unsigned int threads_per_triangle_ = 3;
+	unsigned int threads_per_triangle_ = 16;
 
 	unsigned int display_height_ = 1080;
 	unsigned int display_width_ = 1920;
@@ -55,7 +55,6 @@ private:
 	
 	RgbPixel* device_display_buffer_;
 	RgbPixel* host_display_buffer_;
-
 	unsigned int number_of_pixels_;
 	unsigned int size_of_display_buffer_;
 	void SetDisplayBufferColor(const RgbColor& rgb_color);
