@@ -148,7 +148,7 @@ void ObjFile::CopyData() {
 		std::cout <<'\r'<< std::setw(5)  << round((float)number_of_current_line / (float)this->number_of_lines_ * 100)  << '%';
 
 		if (newLine.length() > 2) {
-			//std::cout << newLine << std::endl;
+	
 			twoSymbols.clear();
 			twoSymbols += newLine.at(0);
 			twoSymbols += newLine.at(1);
@@ -177,6 +177,8 @@ void ObjFile::CopyData() {
 		}
 
 	}
+
+
 
 	std::cout << std::endl;
 
@@ -277,7 +279,6 @@ void ObjFile::ProcessLineWithPolygon(string* newLine) {
 		stream << strInt;
 		stream >> this->polygons[currentNumberOfPolygons].ratios[i].vertexNumber;
 
-
 		newLine->erase(0, pos + 1);
 		pos = newLine->find('/');
 		newLine->erase(0, pos + 1);
@@ -302,6 +303,7 @@ void ObjFile::ProcessLineWithPolygon(string* newLine) {
 
 }
 void ObjFile::ProcessLineWithRgbColor(string* newLine) {
+
 	newLine->erase(0, 7);
 	unsigned int length_of_the_line = newLine->size();
 

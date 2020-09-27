@@ -350,7 +350,11 @@ struct InfoForPainting {
 	unsigned int number_of_colors;
 
 };
+__device__ float Interpolate(float y1, float I1, float y2, float I2, float ya) {
 
+	return I1 * ((ya - y2)/(y1 - y2)) + I2 * ((y1 - ya)/(y1 - y2));
+
+}
 __global__ void DrawPolygons(z_mutex* z_buffer,RgbPixel* display_buffer, Vertex2D* vertexs_2d, InfoForPainting info) {
 
 	int thread_index = threadIdx.x + blockDim.x * blockIdx.x;
@@ -381,10 +385,11 @@ __global__ void DrawPolygons(z_mutex* z_buffer,RgbPixel* display_buffer, Vertex2
 			if (proj_vertexs[i].y > max_y) max_y = ceil(proj_vertexs[i].y);
 		}
 		
-		RgbPixel polygon_color = info.d_rgb[thread_index /2];
-		/*polygon_color.rgb_blue = 0;
-		polygon_color.rgb_green = 0;
-		polygon_color.rgb_red = 255;*/
+		RgbPixel polygon_color = info.d_rgb[thread_index ];
+		//printf("r: %f g: %f b: %f \n", polygon_color.rgb_red, polygon_color.rgb_green, polygon_color.rgb_blue);
+		//polygon_color.rgb_blue = 0;
+		//polygon_color.rgb_green = 0;
+		//polygon_color.rgb_red = 255;
 		
 		//Sorting vertexs by y 2d coordinat
 
@@ -404,8 +409,6 @@ __global__ void DrawPolygons(z_mutex* z_buffer,RgbPixel* display_buffer, Vertex2
 			proj_vertexs[1] = temporary;
 		}
 	
-		
-		
 		float length;
 		Vector2D bot_mid = { proj_vertexs[1].y - proj_vertexs[0].y, -proj_vertexs[1].x + proj_vertexs[0].x };
 		length = sqrt(bot_mid.x * bot_mid.x + bot_mid.y * bot_mid.y);
@@ -439,21 +442,42 @@ __global__ void DrawPolygons(z_mutex* z_buffer,RgbPixel* display_buffer, Vertex2
 
 				if (PixelInTriangle) {
 
-					Proj_vertex p_vertexs[3];
-					for (int i = 0; i < length; i++) p_vertexs[i] = proj_vertexs[i];
-					if (p_vertexs[0].x > p_vertexs[1].x) swap(p_vertexs[0], p_vertexs[1]);
-					if (p_vertexs[0].x > p_vertexs[2].x) swap(p_vertexs[0], p_vertexs[2]);
-					if (p_vertexs[1].x > p_vertexs[2].x) swap(p_vertexs[1], p_vertexs[2]);
+					Proj_vertex v[3];
 
+					for (int i = 0; i < 3; i++) v[i] = proj_vertexs[i];
 
+					//printf("Before %f  %f  %f \n", p_vertexs[0].y, p_vertexs[1].y, p_vertexs[2].y);
+					if (v[0].y < v[1].y) swap(v[0], v[1]);
+					if (v[1].y < v[2].y) swap(v[1], v[2]);
+					if (v[0].y < v[1].y) swap(v[0], v[1]);
 
+					float I1 = v[0]._z, I2 = v[1]._z, I3 = v[2]._z;
+					float X1 = v[0].x, X2 = v[1].x, X3 = v[2].x;
+					float Xa, Xb;
+					float Ia, Ib, Ip;
 
+					if (pixel.y > v[1].y) {
+						Ia = Interpolate(v[0].y, I1, v[1].y, I2, pixel.y);
+						Xa = Interpolate(v[0].y, v[0].x, v[1].y, v[1].x, pixel.y);
+					}
+					else {
+						Ia = Interpolate(v[2].y, I3, v[1].y, I2, pixel.y);
+						Xa = Interpolate(v[2].y, v[2].x, v[1].y, v[1].x, pixel.y);
+					}
+
+					Ib = Interpolate(v[0].y, I1, v[2].y, I3, pixel.y);
+					Xb = Interpolate(v[0].y, v[0].x, v[2].y, v[2].x, pixel.y);
+
+					Ip = Interpolate(Xa, Ia, Xb, Ib, pixel.x);
+					float& pixel_z = Ip;
+					//printf("after %f  %f  %f \n", p_vertexs[0].y, p_vertexs[1].y, p_vertexs[2].y);
+				
 					while ( (z_buffer + 1920 * y + x)->mutex == true ) continue;
 					(z_buffer + 1920 * y + x)->mutex = true;
 
-					//if (1.0f / (z_buffer + 1920 * y + x)->z > _z) {
+					if (1.0f / (z_buffer + 1920 * y + x)->z > pixel_z) {
 					* (display_buffer + 1920 * y + x) = polygon_color;
-					//}
+					}
 
 					(z_buffer + 1920 * y + x)->mutex = false;
 				}
@@ -496,10 +520,9 @@ void GraphicEngine::CreateFlatFrame() {
 
 	number_of_blocks = (data_info_.numberOfPolygons * threads_per_triangle_ + number_of_threads - 1) / number_of_threads;
 
-
 	InfoForPainting info = { device_vertexs_3d, device_polygons, data_info_.numberOfPolygons, (RgbPixel*)device_data_.device_colors, data_info_.numberOfRgbColors };
-	printf("%d", data_info_.numberOfRgbColors);
-	DrawPolygons <<< number_of_blocks, number_of_threads >> > (z_mutex_, device_display_buffer_, device_vertexs_2d, info);
+
+	DrawPolygons <<< number_of_blocks, number_of_threads >>> (z_mutex_, device_display_buffer_, device_vertexs_2d, info);
 
 	//system("pause");
 

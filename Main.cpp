@@ -37,19 +37,19 @@ void processKeystrokes(KeyType key) {
 	switch (key) {
 
 		case A: {
-			engineTranslateModel(100, translate_vertex_left);
+			engineTranslateModel(0, translate_vertex_left);
 			break;
 		}
 		case D: {
-			engineTranslateModel(100, translate_vertex_right);
+			engineTranslateModel(0, translate_vertex_right);
 			break;
 		}
 		case W: {
-			engineTranslateModel(100, translate_vertex_up);
+			engineTranslateModel(0, translate_vertex_up);
 			break;
 		}
 		case S: {
-			engineTranslateModel(100, translate_vertex_down);
+			engineTranslateModel(0, translate_vertex_down);
 			break;
 		}
 		case ArrowLeft: {
@@ -75,12 +75,13 @@ void processKeystrokes(KeyType key) {
 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow)
 {
+
 	engineCreateConsole("Log console");
 	engineInitCUDA(CHOOSE_DEVICE, "GeForce MX150");
 	engineInitDisplayMode(RIBS_MODE, DOUBLE_BUFFERED_ON);
 	engineInitWindow(hInstance);
 	engineInitWindowSize(FULL_SCREEN, 1920, 1080);
-	engineLoad3DModel("__obj_models/lego.obj", "body");
+	engineLoad3DModel("__obj_models/Cube.obj", "body");
 	engineInitDisplayFunction(display);
 	engineInitSpecialFunction(processKeystrokes);
 	engineInitLogicFunction(logicFunction);
