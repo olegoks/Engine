@@ -41,7 +41,7 @@ private:
 	longSize numberOfRgbColorsRead;
 
 	ObjectFileStatus currentStatus;
-
+	RgbPixel current_polygon_color_;
 	const char* fileName;
 	std::ifstream* fileObject;
 	unsigned int number_of_lines_;

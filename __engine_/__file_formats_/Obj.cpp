@@ -249,11 +249,11 @@ void ObjFile::ProcessLineWithNormal(string* newLine) {
 
 	}
 
-	this->normals[this->currentNumberOfNormals].x = xyz[0];
-	this->normals[this->currentNumberOfNormals].y = xyz[1];
-	this->normals[this->currentNumberOfNormals].z = xyz[2];
+	normals[currentNumberOfNormals].x = xyz[0];
+	normals[currentNumberOfNormals].y = xyz[1];
+	normals[currentNumberOfNormals].z = xyz[2];
 
-	this->currentNumberOfNormals++;
+	currentNumberOfNormals++;
 
 }
 void ObjFile::ProcessLineWithPolygon(string* newLine) {
@@ -294,11 +294,12 @@ void ObjFile::ProcessLineWithPolygon(string* newLine) {
 
 		stream.clear();
 		stream << strInt;
-		stream >> this->polygons[currentNumberOfPolygons].ratios[i].normalNumber;
+		stream >> polygons[currentNumberOfPolygons].ratios[i].normalNumber;
 
 		newLine->erase(0, pos + 1);
 	}
 
+	polygons[currentNumberOfPolygons].color = (RgbPixel)current_polygon_color_;
 	this->currentNumberOfPolygons++;
 
 }
@@ -328,31 +329,31 @@ void ObjFile::ProcessLineWithRgbColor(string* newLine) {
 		convertStream << strRGB;
 		convertStream >> std::hex >> intTemp;
 		convertStream.clear();
-		this->rgbColors[this->currentNumberOfRgbColors].rgb_red = intTemp;
-
+		//rgbColors[currentNumberOfRgbColors].rgb_red = intTemp;
+		current_polygon_color_.rgb_red = intTemp;
 		//G
 		strRGB = newLine->substr(2, 2);
 		convertStream << strRGB;
 		convertStream >> std::hex >> intTemp;
 		convertStream.clear();
-		this->rgbColors[this->currentNumberOfRgbColors].rgb_green = intTemp;
-
+		//rgbColors[currentNumberOfRgbColors].rgb_green = intTemp;
+		current_polygon_color_.rgb_green = intTemp;
 		//B
 		strRGB = newLine->substr(4, 2);
 		convertStream << strRGB;
 		convertStream >> std::hex >> intTemp;
 		convertStream.clear();
 
-		this->rgbColors[this->currentNumberOfRgbColors].rgb_blue = intTemp;
-
-		this->currentNumberOfRgbColors++;
+		//rgbColors[currentNumberOfRgbColors].rgb_blue = intTemp;
+		current_polygon_color_.rgb_blue= intTemp;
+		currentNumberOfRgbColors++;
 	}
 	else
 	{
 		
-		this->rgbColors[this->currentNumberOfRgbColors].rgb_red = 0;
-		this->rgbColors[this->currentNumberOfRgbColors].rgb_green = 0;
-		this->rgbColors[this->currentNumberOfRgbColors].rgb_blue = 0;
+		rgbColors[currentNumberOfRgbColors].rgb_red = 0;
+		rgbColors[currentNumberOfRgbColors].rgb_green = 0;
+		rgbColors[currentNumberOfRgbColors].rgb_blue = 0;
 
 	}
 }

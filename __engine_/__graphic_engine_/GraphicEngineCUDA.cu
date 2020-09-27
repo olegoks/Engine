@@ -385,7 +385,7 @@ __global__ void DrawPolygons(z_mutex* z_buffer,RgbPixel* display_buffer, Vertex2
 			if (proj_vertexs[i].y > max_y) max_y = ceil(proj_vertexs[i].y);
 		}
 		
-		RgbPixel polygon_color = info.d_rgb[thread_index ];
+		RgbPixel polygon_color = polygon.color;//info.d_rgb[thread_index ];
 		//printf("r: %f g: %f b: %f \n", polygon_color.rgb_red, polygon_color.rgb_green, polygon_color.rgb_blue);
 		//polygon_color.rgb_blue = 0;
 		//polygon_color.rgb_green = 0;

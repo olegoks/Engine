@@ -90,8 +90,15 @@ struct Ratio {
 	unsigned int normalNumber;
 
 };
+struct RgbPixel {
+	unsigned char	rgb_blue;
+	unsigned char   rgb_green;
+	unsigned char   rgb_red;
+	unsigned char   rgb_reserved;
+};
 struct Polygon3D {
 	Ratio ratios[3];
+	RgbPixel color;
 };
 
 enum DisplayMode {
@@ -192,10 +199,5 @@ struct GpuDataPointers {
 
 };
 
-struct RgbPixel {
-	unsigned char	rgb_blue;
-	unsigned char   rgb_green;
-	unsigned char   rgb_red;
-	unsigned char   rgb_reserved;
-};
+
 #endif
