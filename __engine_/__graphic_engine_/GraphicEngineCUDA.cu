@@ -3,6 +3,13 @@
 #include "__graphic_engine_/GraphicEngine.h"
 
 #include<iostream>
+//#include <device_atomic_functions.hpp>
+//#include <cuda_runtime.h>
+#ifdef __CUDACC__
+#define __device__
+#define <<<
+#define >>>
+#endif
 void GraphicEngine::AllocateVertex2D() {
 
 	unsigned int vertexs2d_size = data_info_.numberOfVertexs * sizeof(Vertex2D);
@@ -353,17 +360,36 @@ struct InfoForPainting {
 	unsigned int screen_height;
 
 };
+
+__device__ void SetWBufferValue(int thread_id, z_mutex* z_buffer,RgbPixel* display_buffer, RgbPixel pixel, float w_value, unsigned int x, unsigned int y) {
+
+	//__syncthreads();
+	//printf("%d  %d\n",w_value, (z_buffer + y * 1920 + x)->z);
+	//if (w_value > (z_buffer + y * 1920 + x)->z) {
+
+		//while ((z_buffer + y * 1920 + x)->work_thread != 0)continue;
+		//(z_buffer + y * 1920 + x)->work_thread = thread_id + 1;
+		*(display_buffer + y * 1920 + x) = pixel;
+		//(z_buffer + y * 1920 + x)->work_thread = 0;
+
+	//}
+	//int v = atomicCAS((int)(z_buffer + y * 1920 + x),(int) -1,(int) thread_id);
+
+
+	
+
+}
+
 __device__ float Interpolate(float y1, float I1, float y2, float I2, float ya) {
 
 	return I1 * ((ya - y2)/(y1 - y2)) + I2 * ((y1 - ya)/(y1 - y2));
 
 }
-__global__ void DrawPolygons(z_mutex* z_buffer, RgbPixel* display_buffer, Vertex2D* vertexs_2d, InfoForPainting info) {
+__global__ void DrawPolygons(mutex_element* mutex_buffer,w_element* w_buffer, RgbPixel* display_buffer, Vertex2D* vertexs_2d, InfoForPainting info) {
 
 	int thread_index = threadIdx.x + blockDim.x * blockIdx.x;
-
+	//printf("%d \n", thread_index);
 	if (thread_index < info.number_of_polygons * info.threads_per_triangle) {
-		
 		
 		//if (thread_index % info.threads_per_triangle == 0) {
 		unsigned int thread_ = (thread_index % info.threads_per_triangle);
@@ -441,6 +467,7 @@ __global__ void DrawPolygons(z_mutex* z_buffer, RgbPixel* display_buffer, Vertex
 		unsigned int delta_x = max_x - min_x;
 		unsigned int index = thread_;
 
+
 		for (int i = 0; i < (delta_y * delta_x) / info.threads_per_triangle; i++)
 		{
 
@@ -493,7 +520,21 @@ __global__ void DrawPolygons(z_mutex* z_buffer, RgbPixel* display_buffer, Vertex
 				//printf("%f \n", pixel_z);
 				//if (1.0f / (z_buffer + 1920 * y + x)->z > pixel_z) {
 				//RgbPixel color = {100, 200, 50, 0};
-				*(display_buffer + 1920 * y + x) = polygon_color;// color;// polygon_color;
+				
+				//SetWBufferValue(thread_index, z_buffer, display_buffer, polygon_color, pixel_z, x, y);
+				
+					//__syncthreads();
+				if (pixel_z > (w_buffer + y * 1920 + x)->w) {
+
+				while ((mutex_buffer + y * 1920 + x)->work_thread != 0)continue;
+				(mutex_buffer + y * 1920 + x)->work_thread = thread_index + 1;
+				* (display_buffer + y * 1920 + x) = polygon_color;
+				(mutex_buffer + y * 1920 + x)->work_thread = 0;
+
+				}
+				int* m_p;
+				atomicCAS(m_p, 0, 1);
+				//*(display_buffer + 1920 * y + x) = polygon_color;// color;// polygon_color;
 				//}
 
 				//(z_buffer + 1920 * y + x)->mutex = false;
@@ -574,9 +615,9 @@ void GraphicEngine::CreateFlatFrame() {
 	Polygon3D* const device_polygons = device_data_.devicePolygons;
 
 	RgbColor color;
-	color.rgb_blue = 255;
+	color.rgb_blue = 0;
 	color.rgb_green = 255;
-	color.rgb_red = 255;
+	color.rgb_red = 0;
 
 	cudaMemset(z_mutex_, 0, display_width_ * display_height_ * sizeof(z_mutex));
 
@@ -593,7 +634,7 @@ void GraphicEngine::CreateFlatFrame() {
 
 	InfoForPainting info = { device_vertexs_3d, device_polygons, data_info_.numberOfPolygons, /*(RgbPixel*)device_data_.device_colors, data_info_.numberOfRgbColors,*/ threads_per_triangle_, display_width_, display_height_ };
 
-	DrawPolygons <<< number_of_blocks, number_of_threads >>> (z_mutex_, device_display_buffer_, device_vertexs_2d, info);
+	DrawPolygons <<< number_of_blocks, number_of_threads >>> (z_mutex_, w_buffer_, device_display_buffer_, device_vertexs_2d, info);
 
 	//system("pause");
 

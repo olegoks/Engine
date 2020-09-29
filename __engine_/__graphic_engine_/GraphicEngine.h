@@ -21,11 +21,12 @@ struct Vertex2D {
 };
 
 //test
-struct z_mutex {
-	float z;
-	bool mutex;
+struct mutex_element {
+	int work_thread;
 };
-
+struct w_element{
+	float w;
+};
 struct CameraInfo {
 	Vertex3D camera_pos;
 	Vector3D vector_x;
@@ -66,12 +67,14 @@ private:
 	void TestFunction();
 	CameraInfo GetCameraInfo();
 
-	z_mutex* z_mutex_;
+	mutex_element* z_mutex_;
+	w_element* w_buffer_;
 	//RgbPixel* z_buffer_;
 
 	void AllocateZBuffer() {
 
-		cudaMalloc((void**)&z_mutex_, display_height_ * display_width_ * sizeof(z_mutex));
+		cudaMalloc((void**)&z_mutex_, display_height_ * display_width_ * sizeof(mutex_element));
+		cudaMalloc((void**)& w_buffer_, display_height_ * display_width_ * sizeof(w_element))
 		//cudaMalloc((void**)&z_buffer_, display_height_ * display_width_ * sizeof(RgbPixel));
 	}
 public:
