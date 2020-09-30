@@ -67,14 +67,14 @@ private:
 	void TestFunction();
 	CameraInfo GetCameraInfo();
 
-	mutex_element* z_mutex_;
+	int* z_mutex_;
 	w_element* w_buffer_;
 	//RgbPixel* z_buffer_;
 
 	void AllocateZBuffer() {
 
-		cudaMalloc((void**)&z_mutex_, display_height_ * display_width_ * sizeof(mutex_element));
-		cudaMalloc((void**)& w_buffer_, display_height_ * display_width_ * sizeof(w_element))
+		cudaMalloc((void**)&z_mutex_, display_height_ * display_width_ * sizeof(int));
+		cudaMalloc((void**)& w_buffer_, display_height_ * display_width_ * sizeof(w_element));
 		//cudaMalloc((void**)&z_buffer_, display_height_ * display_width_ * sizeof(RgbPixel));
 	}
 public:

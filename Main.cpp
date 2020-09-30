@@ -81,7 +81,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	engineInitDisplayMode(RIBS_MODE, DOUBLE_BUFFERED_ON);
 	engineInitWindow(hInstance);
 	engineInitWindowSize(FULL_SCREEN, 1920, 1080);
-	engineLoad3DModel("__obj_models/ColorCube-2.obj", "body");
+	engineLoad3DModel("__obj_models/ColorPolygon.obj", "body");
 	engineInitDisplayFunction(display);
 	engineInitSpecialFunction(processKeystrokes);
 	engineInitLogicFunction(logicFunction);
