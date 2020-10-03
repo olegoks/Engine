@@ -353,6 +353,9 @@ struct InfoForPainting {
 	unsigned int threads_per_triangle;
 	unsigned int screen_width;
 	unsigned int screen_height;
+	Vertex3D camera_position;
+	Vector3D vector_x;
+	Vector3D vector_y;
 
 };
 
@@ -374,7 +377,24 @@ __device__ void SetWBufferValue(int thread_id, mutex_element* z_buffer,RgbPixel*
 	
 
 }
+struct Device_vertex3D{
+	float x;
+	float y;
+	float z;
+};
+__device__ float Dist_plane_vertex(const  Device_vertex3D& plane_v_1, const  Device_vertex3D& plane_v_2, const  Device_vertex3D& plane_v_3, const  Device_vertex3D& vertex) {
 
+	float A, B, C, D;
+	A = plane_v_1.y*(plane_v_2.z - plane_v_3.z) + plane_v_2.y*(plane_v_3.z - plane_v_1.z) + plane_v_3.y*(plane_v_1.z - plane_v_2.z);
+	B = plane_v_1.z*(plane_v_2.x - plane_v_3.x) + plane_v_2.z*(plane_v_3.x - plane_v_1.x) + plane_v_3.z*(plane_v_1.x - plane_v_2.x);
+	C = plane_v_1.x*(plane_v_2.y - plane_v_3.y) + plane_v_2.x*(plane_v_3.y - plane_v_1.y) + plane_v_3.x*(plane_v_1.y - plane_v_2.y);
+	D = plane_v_1.x*(plane_v_2.y* plane_v_3.z - plane_v_3.y* plane_v_2.z) + plane_v_2.x*(plane_v_3.y* plane_v_1.z - plane_v_1.y* plane_v_3.z) + plane_v_3.x*(plane_v_1.y* plane_v_2.z - plane_v_2.y* plane_v_1.z);
+	D = -D;
+	float numerator = (A * vertex.x + B * vertex.y + C * vertex.y + D);
+	if (numerator < 0)numerator = -numerator;
+	return numerator / sqrt(A*A + B*B + C*C);
+
+}
 __device__ float Interpolate(float y1, float I1, float y2, float I2, float ya) {
 
 	
@@ -385,44 +405,59 @@ __device__ float Interpolate(float y1, float I1, float y2, float I2, float ya) {
 }
 __global__ void DrawPolygons(int* mutex_buffer, w_element* w_buffer, RgbPixel* display_buffer, Vertex2D* vertexs_2d, InfoForPainting info) {
 
-
-	
 	int thread_index = threadIdx.x + blockDim.x * blockIdx.x;
-	//printf("%d \n", thread_index);
+	
 	if (thread_index < info.number_of_polygons * info.threads_per_triangle) {
 		
-		//if (thread_index % info.threads_per_triangle == 0) {
-		unsigned int thread_ = (thread_index % info.threads_per_triangle);
-			Polygon3D polygon = info.d_polygons[thread_index / info.threads_per_triangle];//<---
-			//printf("%d", thread_index);
-			Proj_vertex proj_vertexs[3];
-			for (int i = 0; i < 3; i++)
-			{
-				proj_vertexs[i].x = vertexs_2d[polygon.ratios[i].vertexNumber].x;
-				//printf("x: %2f", proj_vertexs[i].x);
-				proj_vertexs[i].y = vertexs_2d[polygon.ratios[i].vertexNumber].y;
-				//printf("y: %2f \n", proj_vertexs[i].y);
-				proj_vertexs[i]._z = 1.0f / info.d_vertexs[polygon.ratios[i].vertexNumber].z;
-				printf("%f", info.d_vertexs[polygon.ratios[i].vertexNumber].z);
+		const unsigned int thread_index_in_triangle = (thread_index % info.threads_per_triangle);
+
+		Polygon3D polygon = info.d_polygons[thread_index / info.threads_per_triangle];
+
+		Proj_vertex proj_vertexs[3];
+
+		for (int i = 0; i < 3; i++)
+		{
+
+			proj_vertexs[i].x = vertexs_2d[polygon.ratios[i].vertexNumber].x;
+			//printf("x: %2f", proj_vertexs[i].x);
+			proj_vertexs[i].y = vertexs_2d[polygon.ratios[i].vertexNumber].y;
+			//printf("y: %2f \n", proj_vertexs[i].y);
+
+			//printf("%f %f %f \n %f %f %f \n", info.d_vertexs[polygon.ratios[i].vertexNumber].x, info.d_vertexs[polygon.ratios[i].vertexNumber].y, info.d_vertexs[polygon.ratios[i].vertexNumber].z, info.camera_position.x, info.camera_position.y, info.camera_position.z);
+
+			/*float x_2 = info.d_vertexs[polygon.ratios[i].vertexNumber].x - info.camera_position.x;
+			float y_2 = info.d_vertexs[polygon.ratios[i].vertexNumber].y - info.camera_position.y;
+			float z_2 = info.d_vertexs[polygon.ratios[i].vertexNumber].z - info.camera_position.z;
+			float distance_to_camera = sqrt(x_2 * x_2 + y_2 * y_2 +z_2 * z_2 );*/
+			//printf("%f \n", distance_to_camera);
+
+			Device_vertex3D plane_v_1, plane_v_2, plane_v_3, vertex;
+
+				plane_v_1.x = info.camera_position.x;
+				plane_v_1.y = info.camera_position.y;
+				plane_v_1.z = info.camera_position.z;
+
+				plane_v_2.x = info.vector_x.x;
+				plane_v_2.y = info.vector_x.y;
+				plane_v_2.z = info.vector_x.z;
+
+				plane_v_3.x = info.vector_y.x;
+				plane_v_3.y = info.vector_y.y;
+				plane_v_3.z = info.vector_y.z;
+
+				vertex.x = info.d_vertexs[polygon.ratios[i].vertexNumber].x;
+				vertex.y = info.d_vertexs[polygon.ratios[i].vertexNumber].y;
+				vertex.z = info.d_vertexs[polygon.ratios[i].vertexNumber].z;
+				
+				float distance_to_camera = Dist_plane_vertex(plane_v_1, plane_v_2, plane_v_3, vertex);
+				proj_vertexs[i]._z = 1.0f / distance_to_camera;//<- здесь нули
+
+				//printf("%f \n", proj_vertexs[i]._z);
+
 			}
-		
-			int min_x = 10000, min_y = 10000, max_x = -1, max_y = -1;
 
-			for (int i = 0; i < 3; i++)
-			{
-				if (proj_vertexs[i].x < min_x) min_x = floor(proj_vertexs[i].x);
-				if (proj_vertexs[i].y < min_y) min_y = floor(proj_vertexs[i].y);
-				if (proj_vertexs[i].x > max_x) max_x = ceil(proj_vertexs[i].x);
-				if (proj_vertexs[i].y > max_y) max_y = ceil(proj_vertexs[i].y);
-			}
 
-			RgbPixel polygon_color = polygon.color;//info.d_rgb[thread_index ];
-			//printf("r: %f g: %f b: %f \n", polygon_color.rgb_red, polygon_color.rgb_green, polygon_color.rgb_blue);
-			//polygon_color.rgb_blue = 0;
-			//polygon_color.rgb_green = 0;
-			//polygon_color.rgb_red = 255;
-
-			//Sorting vertexs by y 2d coordinat
+			RgbPixel polygon_color = polygon.color;
 
 			//Clockwise direction
 			Vertex2D AToB;
@@ -440,7 +475,9 @@ __global__ void DrawPolygons(int* mutex_buffer, w_element* w_buffer, RgbPixel* d
 				proj_vertexs[1] = temporary;
 			}
 
+			//Normalize 2d vectors
 			float length;
+
 			Vector2D bot_mid = { proj_vertexs[1].y - proj_vertexs[0].y, -proj_vertexs[1].x + proj_vertexs[0].x };
 			length = sqrt(bot_mid.x * bot_mid.x + bot_mid.y * bot_mid.y);
 			bot_mid.x /= length;
@@ -460,14 +497,23 @@ __global__ void DrawPolygons(int* mutex_buffer, w_element* w_buffer, RgbPixel* d
 			const Vertex2D mid = { proj_vertexs[1].x, proj_vertexs[1].y };
 			const Vertex2D top = { proj_vertexs[2].x, proj_vertexs[2].y };
 
-		
 		//printf("bot: %2f, %2f, mid: %2f %2f, top: %2f %2f \n", bot.x, bot.y,mid.x, mid.y,top.x, top.y);
 		//printf("bot_mid: %2f %2f, mid_top: %2f %2f, top_bot: %2f %2f \n", bot_mid.x, bot_mid.y, mid_top.x, mid_top.y, top_bot.x, top_bot.y);
+		
+
+		int min_x = 10000, min_y = 10000, max_x = -1, max_y = -1;
+
+		for (int i = 0; i < 3; i++)
+		{
+			if (proj_vertexs[i].x < min_x) min_x = floor(proj_vertexs[i].x);
+			if (proj_vertexs[i].y < min_y) min_y = floor(proj_vertexs[i].y);
+			if (proj_vertexs[i].x > max_x) max_x = ceil(proj_vertexs[i].x);
+			if (proj_vertexs[i].y > max_y) max_y = ceil(proj_vertexs[i].y);
+		}
+
 		unsigned int delta_y = max_y - min_y;
 		unsigned int delta_x = max_x - min_x;
-		unsigned int index = thread_;
-
-
+		unsigned int index = thread_index_in_triangle;
 
 		for (int i = 0; i < (delta_y * delta_x) / info.threads_per_triangle; i++)
 		{
@@ -494,6 +540,9 @@ __global__ void DrawPolygons(int* mutex_buffer, w_element* w_buffer, RgbPixel* d
 
 				float I1 = v[0]._z, I2 = v[1]._z, I3 = v[2]._z;
 				float X1 = v[0].x, X2 = v[1].x, X3 = v[2].x;
+
+				
+
 				float Xa, Xb;
 				float Ia, Ib, Ip;
 				
@@ -515,30 +564,37 @@ __global__ void DrawPolygons(int* mutex_buffer, w_element* w_buffer, RgbPixel* d
 				//printf("%d\n", mutex_buffer);
 				//printf("%f %f %f %f %f \n", Xa, Ia, Xb, Ib, pixel.x);
 				//printf("%f \n", Ip); //-<<Здесь работает
-				printf("v[0].x:%f v[1].x:%f v[2].x:%f \n v[0].y:%f v[1].y:%f v[2].y:%f \n I1:%f I2: %f I3: %f \n \n", v[0].x, v[1].x, v[2].x, v[0].y, v[1].y, v[2].y, v[0]._z, v[1]._z, v[2]._z);
+				//printf("v[0].x:%f v[1].x:%f v[2].x:%f \n v[0].y:%f v[1].y:%f v[2].y:%f \n I1:%f I2: %f I3: %f \n \n", v[0].x, v[1].x, v[2].x, v[0].y, v[1].y, v[2].y, v[0]._z, v[1]._z, v[2]._z);
 				Ip = Interpolate(Xa, Ia, Xb, Ib, pixel.x);
+				//printf("%f \n", Ip);
+				//printf("I1:%f, X: %f, Y:%f \n I2:%f, X: %f, Y:%f \n I3:%f, X: %f, Y:%f \n Pixel: X: %f Y: %f \n Ip: %f W: %f", I1, v[0].x, v[0].y, I2, v[1].x, v[1].y, I3, v[2].x, v[2].y, pixel.x, pixel.y, Ip, (w_buffer + y * 1920 + x)->w);
 
-					bool isSet = false;
+				//Mutex
+				bool is_set = 0;
+				__syncthreads();
+				do
+				{	
 
-					do
-					{	
-						if (isSet = atomicCAS((mutex_buffer + 1920 * y + x), 0, 1) == 0)
-						{
+					is_set = atomicCAS((mutex_buffer + 1920 * y + x), 0, 1);
+					
+					if (is_set)
+					{
 
-							if (Ip > (w_buffer + y * 1920 + x)->w) {
-								*(display_buffer + y * 1920 + x) = polygon_color;
-							}
+						if (Ip > (w_buffer + y * 1920 + x)->w) {
+
+							*(display_buffer + y * 1920 + x) = polygon_color;
 
 						}
 
-						if (isSet)
-						{
+					}
 
-							*(mutex_buffer + 1920 * y + x) = 0;
+					if (is_set)
+					{
+						atomicExch(mutex_buffer + 1920 * y + x, 0);
+						//*(mutex_buffer + 1920 * y + x) = 0;
+					}
 
-						}
-
-					} while (!isSet);
+				} while (!is_set);
 
 		}
 
@@ -565,7 +621,7 @@ void GraphicEngine::CreateFlatFrame() {
 
 	RgbColor color;
 	color.rgb_blue = 0;
-	color.rgb_green = 255;
+	color.rgb_green = 0;
 	color.rgb_red = 0;
 
 	cudaMemset(z_mutex_, 0, display_width_ * display_height_ * sizeof(int));
@@ -581,11 +637,11 @@ void GraphicEngine::CreateFlatFrame() {
 
 	number_of_blocks = (data_info_.numberOfPolygons * threads_per_triangle_ + number_of_threads - 1) / number_of_threads;
 
-	InfoForPainting info = { device_vertexs_3d, device_polygons, data_info_.numberOfPolygons, /*(RgbPixel*)device_data_.device_colors, data_info_.numberOfRgbColors,*/ threads_per_triangle_, display_width_, display_height_ };
+	InfoForPainting info = { device_vertexs_3d, device_polygons, data_info_.numberOfPolygons, threads_per_triangle_, display_width_, display_height_, camera_position, vector_x, vector_y };
 	//test <<<1, 1 >>> (z_mutex_);
 	DrawPolygons <<< number_of_blocks, number_of_threads >>> (z_mutex_, w_buffer_, device_display_buffer_, device_vertexs_2d, info);
 
-	system("pause");
+	//system("pause");
 
 }
 

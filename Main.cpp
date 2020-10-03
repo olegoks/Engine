@@ -12,6 +12,7 @@ void display() {
 	float rotate_angle = 10;*/
 	//engineDisplayModeOfModel(0, SHOW);
 	                                
+	engineScaleModel(0, 10);
 }
 
 
@@ -53,11 +54,11 @@ void processKeystrokes(KeyType key) {
 			break;
 		}
 		case ArrowLeft: {
-			engineRotateCamera(0, -10.0f, rotate_vector, rotate_vertex);
+			engineRotateCamera(0, -1.0f, rotate_vector, rotate_vertex);
 			break;
 		}
 		case ArrowRight: {
-			engineRotateCamera(0, 10.0f, rotate_vector, rotate_vertex);
+			engineRotateCamera(0, 1.0f, rotate_vector, rotate_vertex);
 			break;
 		}
 		case WheelDown: {
@@ -81,7 +82,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	engineInitDisplayMode(RIBS_MODE, DOUBLE_BUFFERED_ON);
 	engineInitWindow(hInstance);
 	engineInitWindowSize(FULL_SCREEN, 1920, 1080);
-	engineLoad3DModel("__obj_models/ColorPolygon.obj", "body");
+	engineLoad3DModel("__obj_models/ParallelPlane_4.obj", "body");
 	engineInitDisplayFunction(display);
 	engineInitSpecialFunction(processKeystrokes);
 	engineInitLogicFunction(logicFunction);
