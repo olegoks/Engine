@@ -438,8 +438,6 @@ __global__ void DrawPolygons(int* mutex_buffer, float* w_buffer, RgbPixel* displ
 				float distance_to_camera = Dist_plane_vertex(plane_v_1, plane_v_2, plane_v_3, vertex);
 				proj_vertexs[i]._z = 1.0f / distance_to_camera;
 
-			
-
 			}
 
 
@@ -509,7 +507,7 @@ __global__ void DrawPolygons(int* mutex_buffer, float* w_buffer, RgbPixel* displ
 			bool PixelInTriangle = InPositiveHalfPlane(pixel, bot, bot_mid) && InPositiveHalfPlane(pixel, mid, mid_top) && InPositiveHalfPlane(pixel, top, top_bot);
 
 			if (PixelInTriangle) {
-
+				/*
 				Proj_vertex v[3];
 
 				for (int i = 0; i < 3; i++) v[i] = proj_vertexs[i];
@@ -542,9 +540,12 @@ __global__ void DrawPolygons(int* mutex_buffer, float* w_buffer, RgbPixel* displ
 				Xb = Interpolate(v[0].y, v[0].x, v[2].y, v[2].x, pixel.y);
 				
 				Ip = Interpolate(Xa, Ia, Xb, Ib, pixel.x);
-				
+				*/
+				//printf("%d  %d \n",x, y);
+				*(display_buffer + y * 1920 + x) = polygon_color;
+
+				/*
 				bool is_set = 0;
-			
 				do
 				{	
 					
@@ -574,8 +575,8 @@ __global__ void DrawPolygons(int* mutex_buffer, float* w_buffer, RgbPixel* displ
 					}
 
 				} while (!is_set);
-
-		}
+				*/
+			}
 
 		index += info.threads_per_triangle;
 		}
@@ -618,10 +619,10 @@ void GraphicEngine::CreateFlatFrame() {
 	cudaMemset(w_buffer_, 0.0, display_width_ * display_height_ * sizeof(float));
 
 	const unsigned int number_of_threads = 1024;
-	unsigned int number_of_blocks = (display_width_ * display_height_ + number_of_threads - 1) / number_of_threads;;
+	//unsigned int number_of_blocks = (display_width_ * display_height_ + number_of_threads - 1) / number_of_threads;;
 	
 	//MemSet <<<number_of_blocks, number_of_threads >>> (w_buffer_, sizeof(float), display_width_ * display_height_, 0.0f);
-	number_of_blocks = (data_info_.numberOfVertexs + number_of_threads - 1) / number_of_threads;
+	unsigned int number_of_blocks = (data_info_.numberOfVertexs + number_of_threads - 1) / number_of_threads;
 
 	SetDisplayBufferColor(color);
 
