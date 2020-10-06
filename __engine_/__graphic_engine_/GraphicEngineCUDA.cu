@@ -359,24 +359,6 @@ struct InfoForPainting {
 
 };
 
-__device__ void SetWBufferValue(int thread_id, mutex_element* z_buffer,RgbPixel* display_buffer, RgbPixel pixel, float w_value, unsigned int x, unsigned int y) {
-
-	//__syncthreads();
-	//printf("%d  %d\n",w_value, (z_buffer + y * 1920 + x)->z);
-	//if (w_value > (z_buffer + y * 1920 + x)->z) {
-
-		//while ((z_buffer + y * 1920 + x)->work_thread != 0)continue;
-		//(z_buffer + y * 1920 + x)->work_thread = thread_id + 1;
-		*(display_buffer + y * 1920 + x) = pixel;
-		//(z_buffer + y * 1920 + x)->work_thread = 0;
-
-	//}
-	//int v = atomicCAS((int)(z_buffer + y * 1920 + x),(int) -1,(int) thread_id);
-
-
-	
-
-}
 struct Device_vertex3D{
 	float x;
 	float y;
@@ -539,9 +521,7 @@ __global__ void DrawPolygons(int* mutex_buffer, w_element* w_buffer, RgbPixel* d
 				//printf("after %d: %f  %f  %f \n", thread_index, v[0].y, v[1].y, v[2].y);
 
 				float I1 = v[0]._z, I2 = v[1]._z, I3 = v[2]._z;
-				float X1 = v[0].x, X2 = v[1].x, X3 = v[2].x;
-
-				
+				float X1 = v[0].x,  X2 = v[1].x,  X3 = v[2].x;
 
 				float Xa, Xb;
 				float Ia, Ib, Ip;
@@ -555,7 +535,7 @@ __global__ void DrawPolygons(int* mutex_buffer, w_element* w_buffer, RgbPixel* d
 				else {
 
 					Ia = Interpolate(v[2].y, I3, v[1].y, I2, pixel.y);
-					Xa = Interpolate(v[2].y, v[2].x, v[1].y, v[1].x, pixel.y);
+					Xa = Interpolate(v[1].y, v[1].x, v[2].y, v[2].x, pixel.y);
 
 				}
 				
@@ -594,8 +574,8 @@ __global__ void DrawPolygons(int* mutex_buffer, w_element* w_buffer, RgbPixel* d
 
 					if (is_set)
 					{
-						atomicExch(mutex_buffer + 1920 * y + x, 0);
-						//*(mutex_buffer + 1920 * y + x) = 0;
+						//atomicExch(mutex_buffer + 1920 * y + x, 0);
+						*(mutex_buffer + 1920 * y + x) = 0;
 					}
 
 				} while (!is_set);
