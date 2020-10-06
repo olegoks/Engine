@@ -450,7 +450,7 @@ __global__ void DrawPolygons(int* mutex_buffer, w_element* w_buffer, RgbPixel* d
 				vertex.z = info.d_vertexs[polygon.ratios[i].vertexNumber].z;
 				
 				float distance_to_camera = Dist_plane_vertex(plane_v_1, plane_v_2, plane_v_3, vertex);
-				proj_vertexs[i]._z = 1.0f / distance_to_camera;//<- здесь нули
+				proj_vertexs[i]._z = 1.0f / distance_to_camera;
 
 				//printf("%f \n", proj_vertexs[i]._z);
 
@@ -571,7 +571,7 @@ __global__ void DrawPolygons(int* mutex_buffer, w_element* w_buffer, RgbPixel* d
 
 				//Mutex
 				bool is_set = 0;
-				__syncthreads();
+				//__syncthreads();
 				do
 				{	
 
@@ -582,7 +582,11 @@ __global__ void DrawPolygons(int* mutex_buffer, w_element* w_buffer, RgbPixel* d
 
 						if (Ip > (w_buffer + y * 1920 + x)->w) {
 
-							*(display_buffer + y * 1920 + x) = polygon_color;
+							RgbPixel grey;
+							grey.rgb_blue = (int)100.0f * Ip;
+							grey.rgb_green = (int)100.0f * Ip;
+							grey.rgb_red = (int)100.0f * Ip;
+							*(display_buffer + y * 1920 + x) = grey;
 
 						}
 
