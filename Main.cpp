@@ -12,7 +12,7 @@ void display() {
 	float rotate_angle = 10;*/
 	//engineDisplayModeOfModel(0, SHOW);
 	                                
-	engineScaleModel(0, 10);
+	engineScaleModel(0, 50);
 }
 
 

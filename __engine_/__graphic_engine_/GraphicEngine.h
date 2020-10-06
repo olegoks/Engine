@@ -24,9 +24,7 @@ struct Vertex2D {
 struct mutex_element {
 	int work_thread;
 };
-struct w_element{
-	float w;
-};
+
 struct CameraInfo {
 	Vertex3D camera_pos;
 	Vector3D vector_x;
@@ -45,7 +43,7 @@ private:
 	DataInfo data_info_;
 	GpuDataPointers device_data_;
 	HWND window_handle_;
-	unsigned int threads_per_triangle_ = 32;
+	unsigned int threads_per_triangle_ = 16;
 
 	unsigned int display_height_ = 1080;
 	unsigned int display_width_ = 1920;
@@ -68,13 +66,13 @@ private:
 	CameraInfo GetCameraInfo();
 
 	int* z_mutex_;
-	w_element* w_buffer_;
+	float* w_buffer_;
 	//RgbPixel* z_buffer_;
 
 	void AllocateZBuffer() {
 
 		cudaMalloc((void**)&z_mutex_, display_height_ * display_width_ * sizeof(int));
-		cudaMalloc((void**)& w_buffer_, display_height_ * display_width_ * sizeof(w_element));
+		cudaMalloc((void**)& w_buffer_, display_height_ * display_width_ * sizeof(float));
 		//cudaMalloc((void**)&z_buffer_, display_height_ * display_width_ * sizeof(RgbPixel));
 	}
 public:

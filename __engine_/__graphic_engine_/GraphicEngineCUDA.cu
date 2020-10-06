@@ -17,12 +17,13 @@ void GraphicEngine::AllocateVertex2D() {
 
 __global__ void ProjectVertexs(const Vertex3D* const vertexs_3d, Vertex2D* const vertexs_2d, const unsigned int number_of_vertexs, const Vertex3D cameraPosition, const Vector3D vectorX, const Vector3D vectorY, const Vector3D vectorZ, const float k) {
 
-		int threadIndex = threadIdx.x + blockIdx.x * blockDim.x;
+	int threadIndex = threadIdx.x + blockIdx.x * blockDim.x;
 	
 	if (threadIndex < number_of_vertexs) {
 
 		//Offset
-	
+
+		//Central projection
 		float offset_x = vertexs_3d[threadIndex].x - cameraPosition.x;
 		float offset_y = vertexs_3d[threadIndex].y - cameraPosition.y;
 		float offset_z = vertexs_3d[threadIndex].z - cameraPosition.z;
@@ -33,6 +34,9 @@ __global__ void ProjectVertexs(const Vertex3D* const vertexs_3d, Vertex2D* const
 		
 		vertexs_2d[threadIndex].x = ( k * new_x / (new_z + k) ) ;
 		vertexs_2d[threadIndex].y = ( k * new_y / (new_z + k) ) ;
+		//Ortogonal
+		//vertexs_2d[threadIndex].x = vertexs_3d[threadIndex].x;
+		//vertexs_2d[threadIndex].y = vertexs_3d[threadIndex].y;
 
 	}
 
@@ -327,7 +331,6 @@ inline __device__ bool InPositiveHalfPlane(const Vertex2D& pixel, const Vertex2D
 	pixel_vector.x = pixel.x - triangle_vertex.x;
 	pixel_vector.y = pixel.y - triangle_vertex.y;
 
-
 	Vector2D normal = _normal;
 	float length_n = sqrt(normal.x * normal.x + normal.y * normal.y);
 	normal.x /= length_n;
@@ -359,24 +362,7 @@ struct InfoForPainting {
 
 };
 
-__device__ void SetWBufferValue(int thread_id, mutex_element* z_buffer,RgbPixel* display_buffer, RgbPixel pixel, float w_value, unsigned int x, unsigned int y) {
 
-	//__syncthreads();
-	//printf("%d  %d\n",w_value, (z_buffer + y * 1920 + x)->z);
-	//if (w_value > (z_buffer + y * 1920 + x)->z) {
-
-		//while ((z_buffer + y * 1920 + x)->work_thread != 0)continue;
-		//(z_buffer + y * 1920 + x)->work_thread = thread_id + 1;
-		*(display_buffer + y * 1920 + x) = pixel;
-		//(z_buffer + y * 1920 + x)->work_thread = 0;
-
-	//}
-	//int v = atomicCAS((int)(z_buffer + y * 1920 + x),(int) -1,(int) thread_id);
-
-
-	
-
-}
 struct Device_vertex3D{
 	float x;
 	float y;
@@ -403,7 +389,7 @@ __device__ float Interpolate(float y1, float I1, float y2, float I2, float ya) {
 	return Ip;
 
 }
-__global__ void DrawPolygons(int* mutex_buffer, w_element* w_buffer, RgbPixel* display_buffer, Vertex2D* vertexs_2d, InfoForPainting info) {
+__global__ void DrawPolygons(int* mutex_buffer, float* w_buffer, RgbPixel* display_buffer, Vertex2D* vertexs_2d, InfoForPainting info) {
 
 	int thread_index = threadIdx.x + blockDim.x * blockIdx.x;
 	
@@ -450,9 +436,9 @@ __global__ void DrawPolygons(int* mutex_buffer, w_element* w_buffer, RgbPixel* d
 				vertex.z = info.d_vertexs[polygon.ratios[i].vertexNumber].z;
 				
 				float distance_to_camera = Dist_plane_vertex(plane_v_1, plane_v_2, plane_v_3, vertex);
-				proj_vertexs[i]._z = 1.0f / distance_to_camera;//<- здесь нули
+				proj_vertexs[i]._z = 1.0f / distance_to_camera;
 
-				//printf("%f \n", proj_vertexs[i]._z);
+			
 
 			}
 
@@ -497,10 +483,6 @@ __global__ void DrawPolygons(int* mutex_buffer, w_element* w_buffer, RgbPixel* d
 			const Vertex2D mid = { proj_vertexs[1].x, proj_vertexs[1].y };
 			const Vertex2D top = { proj_vertexs[2].x, proj_vertexs[2].y };
 
-		//printf("bot: %2f, %2f, mid: %2f %2f, top: %2f %2f \n", bot.x, bot.y,mid.x, mid.y,top.x, top.y);
-		//printf("bot_mid: %2f %2f, mid_top: %2f %2f, top_bot: %2f %2f \n", bot_mid.x, bot_mid.y, mid_top.x, mid_top.y, top_bot.x, top_bot.y);
-		
-
 		int min_x = 10000, min_y = 10000, max_x = -1, max_y = -1;
 
 		for (int i = 0; i < 3; i++)
@@ -532,16 +514,13 @@ __global__ void DrawPolygons(int* mutex_buffer, w_element* w_buffer, RgbPixel* d
 
 				for (int i = 0; i < 3; i++) v[i] = proj_vertexs[i];
 
-				//printf("before %d: %f  %f  %f \n", thread_index, v[0].y, v[1].y, v[2].y);
 				if (v[0].y < v[1].y) swap(v[0], v[1]);
 				if (v[1].y < v[2].y) swap(v[1], v[2]); 
 				if (v[0].y < v[1].y) swap(v[0], v[1]);
-				//printf("after %d: %f  %f  %f \n", thread_index, v[0].y, v[1].y, v[2].y);
+			
 
 				float I1 = v[0]._z, I2 = v[1]._z, I3 = v[2]._z;
 				float X1 = v[0].x, X2 = v[1].x, X3 = v[2].x;
-
-				
 
 				float Xa, Xb;
 				float Ia, Ib, Ip;
@@ -561,37 +540,37 @@ __global__ void DrawPolygons(int* mutex_buffer, w_element* w_buffer, RgbPixel* d
 				
 				Ib = Interpolate(v[0].y, I1, v[2].y, I3, pixel.y);
 				Xb = Interpolate(v[0].y, v[0].x, v[2].y, v[2].x, pixel.y);
-				//printf("%d\n", mutex_buffer);
-				//printf("%f %f %f %f %f \n", Xa, Ia, Xb, Ib, pixel.x);
-				//printf("%f \n", Ip); //-<<Здесь работает
-				//printf("v[0].x:%f v[1].x:%f v[2].x:%f \n v[0].y:%f v[1].y:%f v[2].y:%f \n I1:%f I2: %f I3: %f \n \n", v[0].x, v[1].x, v[2].x, v[0].y, v[1].y, v[2].y, v[0]._z, v[1]._z, v[2]._z);
+				
 				Ip = Interpolate(Xa, Ia, Xb, Ib, pixel.x);
-				//printf("%f \n", Ip);
-				//printf("I1:%f, X: %f, Y:%f \n I2:%f, X: %f, Y:%f \n I3:%f, X: %f, Y:%f \n Pixel: X: %f Y: %f \n Ip: %f W: %f", I1, v[0].x, v[0].y, I2, v[1].x, v[1].y, I3, v[2].x, v[2].y, pixel.x, pixel.y, Ip, (w_buffer + y * 1920 + x)->w);
-
-				//Mutex
+				
 				bool is_set = 0;
-				__syncthreads();
+			
 				do
 				{	
-
+					
 					is_set = atomicCAS((mutex_buffer + 1920 * y + x), 0, 1);
 					
 					if (is_set)
 					{
 
-						if (Ip > (w_buffer + y * 1920 + x)->w) {
+						if (Ip > *(w_buffer + y * 1920 + x)) {
 
+							RgbPixel grey;
+							grey.rgb_red = 256 - (int )Ip * 100;
+							grey.rgb_green = 256 - (int)Ip * 100;
+							grey.rgb_blue = 256 - (int)Ip * 100;
 							*(display_buffer + y * 1920 + x) = polygon_color;
+							//printf("%f %f %d %d %d\n", Ip, *(w_buffer + y * 1920 + x), polygon_color.rgb_blue, polygon_color.rgb_green, polygon_color.rgb_red);
+							//printf("%d %d %d \n",(display_buffer + y * 1920 + x)->rgb_blue);
 
 						}
-
+						
 					}
 
 					if (is_set)
 					{
-						atomicExch(mutex_buffer + 1920 * y + x, 0);
-						//*(mutex_buffer + 1920 * y + x) = 0;
+						
+						*(mutex_buffer + 1920 * y + x) = 0;
 					}
 
 				} while (!is_set);
@@ -602,9 +581,20 @@ __global__ void DrawPolygons(int* mutex_buffer, w_element* w_buffer, RgbPixel* d
 		}
 		
 	}
-	
-}
 
+	//__syncthreads();
+}
+__global__ void MemSet(float* memory, UINT el_size, UINT el_num, float value ) {
+
+	int thread_index = threadIdx.x + blockDim.x * blockIdx.x;
+
+	if (thread_index < el_num) {
+		*((float*)memory + el_size * thread_index) = value;
+		
+	}
+
+
+}
 void GraphicEngine::CreateFlatFrame() {
 
 	const Vertex3D const  camera_position = *(camera_->GetPosition());
@@ -624,10 +614,14 @@ void GraphicEngine::CreateFlatFrame() {
 	color.rgb_green = 0;
 	color.rgb_red = 0;
 
-	cudaMemset(z_mutex_, 0, display_width_ * display_height_ * sizeof(int));
-	cudaMemset(w_buffer_, 0, display_width_ * display_height_ * sizeof( w_element ));
+	cudaMemset(z_mutex_, 0.0f, display_width_ * display_height_ * sizeof(int));
+	cudaMemset(w_buffer_, 0.0, display_width_ * display_height_ * sizeof(float));
+
 	const unsigned int number_of_threads = 1024;
-	unsigned int number_of_blocks = (data_info_.numberOfVertexs + number_of_threads - 1) / number_of_threads;
+	unsigned int number_of_blocks = (display_width_ * display_height_ + number_of_threads - 1) / number_of_threads;;
+	
+	//MemSet <<<number_of_blocks, number_of_threads >>> (w_buffer_, sizeof(float), display_width_ * display_height_, 0.0f);
+	number_of_blocks = (data_info_.numberOfVertexs + number_of_threads - 1) / number_of_threads;
 
 	SetDisplayBufferColor(color);
 
