@@ -8,12 +8,13 @@
 #include <iomanip>
 #include <cmath>
 #include "Structures.h"
-
+#include <memory>
+#include <vector>
 
 using longSize = unsigned long long;
 using std::string;
 
-enum ObjectFileStatus {
+enum class File—ondition: uint8_t {
 
 	FILE_IS_NOT_OPEN,
 	FILE_IS_OPEN_WITHOUT_ERRORS,
@@ -23,28 +24,30 @@ enum ObjectFileStatus {
 
 };
 
-class ObjFile {
+class ObjFile final {
+
+	using PVertexs = std::shared_ptr<Vertex3D>;
+	using PNormals = std::shared_ptr<Vertex3D>;
+	using PPolygons = std::shared_ptr<Vertex3D>;
+	using PRgbColors = std::shared_ptr<Vertex3D>;
+	using PRatios = std::shared_ptr<Vertex3D>;
+	using FileObject = std::ifstream;
+	static struct FilePointers {
+
+	};
 
 private:
 
-	Vertex3D* vertexs;
-	longSize currentNumberOfVertexs;
-	longSize numberOfVertexsRead;
-	Normal3D* normals;
-	longSize currentNumberOfNormals;
-	longSize numberOfNormalsRead;
-	Polygon3D* polygons;
-	longSize currentNumberOfPolygons;
-	longSize numberOfPolygonsRead;
-	RgbColor* rgbColors;
-	longSize currentNumberOfRgbColors;
-	longSize numberOfRgbColorsRead;
+	PVertexs vertexs_ = nullptr;
+	PNormals normals_ = nullptr;
+	PPolygons polygons_ = nullptr;
+	PRgbColors rgb_colors_ = nullptr;
+	PRatios ratios_ = nullptr;
+	
+	std::string file_name_ = "no_file_name.txt";
+	File—ondition condition_ = File—ondition::FILE_IS_NOT_OPEN;
+	FileObject file_object_;
 
-	ObjectFileStatus currentStatus;
-	RgbPixel current_polygon_color_;
-	const char* fileName;
-	std::ifstream* fileObject;
-	unsigned int number_of_lines_;
 	void CountNumberOfPrimitives();
 	void AllocateMemory();
 	void CopyData();
@@ -56,45 +59,31 @@ private:
 
 public:
 
-	class FileOpenException {
-	public:
+	class ObjFileException final{
+	private:
 
-		int codeError;
-		const char* fileName;
-
-		FileOpenException(int openCodeError, const char* unopenedFileName):
-			codeError(openCodeError),
-			fileName(unopenedFileName) {
+		const File—ondition condition_;
+		const std::string error_;
 		
-		}
-
-	};
-
-	class AllocationMemoryException {};
-	class DoubleReadingFileException {
 	public:
-		const char* firstFileName;
-		const char* secondFileName;
+		
+		ObjFileException() = default;
+		ObjFileException(const File—ondition condition, const std::string& error)noexcept :
+			condition_(condition), error_(error) {};
 
-		DoubleReadingFileException(const char* firstFileName, const char* secondFileName) {
-
-			this->firstFileName = firstFileName;
-			this->secondFileName = secondFileName;
-
-		}
+		inline const std::string& GetErrorName()const noexcept { return error_; };
+		inline const File—ondition GetCondition()const noexcept { return condition_; };
+			
 	};
-	ObjFile();
-	ObjFile(const char* fileName);
+
+	explicit ObjFile()noexcept;
+	explicit ObjFile(const std::string& file_name)noexcept;
 	~ObjFile();
-	void OpenFile(const char* fileName);
-	inline Vertex3D* ReturnVertexs()const noexcept { return this->vertexs; };
-	inline Normal3D* ReturnNormals()const noexcept { return this->normals; }
-	inline Polygon3D* ReturnPolygons()const noexcept { return this->polygons; }
-	inline RgbColor* ReturnRgbColors()const noexcept { return this->rgbColors; }
-	inline longSize GetNumberOfVertexs()const noexcept { return this->currentNumberOfVertexs; };
-	inline longSize GetNumberOfNormals()const noexcept { return this->currentNumberOfNormals; };
-	inline longSize GetNumberOfRgbColors()const noexcept { return this->currentNumberOfRgbColors; };
-	inline longSize GetNumberOfPolygons()const noexcept { return this->currentNumberOfPolygons; };
+	void open(const std::string& file_name);
+	inline PVertexs ReturnVertexs()const noexcept { return vertexs_; };
+	inline PNormals ReturnNormals()const noexcept { return normals_; }
+	inline PPolygons ReturnPolygons()const noexcept { return polygons_; }
+	inline PRgbColors ReturnRgbColors()const noexcept { return rgb_colors_; }
 
 };
 

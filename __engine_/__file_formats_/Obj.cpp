@@ -3,71 +3,38 @@
 
 #include <iostream>
 
-ObjFile::ObjFile() :
-	currentNumberOfVertexs(0),
-	currentNumberOfNormals(0),
-	currentNumberOfRgbColors(0),
-	currentNumberOfPolygons(0),
-	numberOfVertexsRead(0),
-	numberOfNormalsRead(0),
-	numberOfRgbColorsRead(0),
-	numberOfPolygonsRead(0),
-	number_of_lines_(0),
-	normals(nullptr),
-	vertexs(nullptr),
-	rgbColors(nullptr),
-	currentStatus(FILE_IS_NOT_OPEN)
+explicit ObjFile::ObjFile()noexcept
 {
 
 }
 
-ObjFile::ObjFile(const char* fileName) :
-	currentNumberOfVertexs(0),
-	currentNumberOfNormals(0),
-	currentNumberOfRgbColors(0),
-	currentNumberOfPolygons(0),
-	numberOfVertexsRead(0),
-	numberOfNormalsRead(0),
-	numberOfRgbColorsRead(0),
-	numberOfPolygonsRead(0),
-	number_of_lines_(0),
-	normals(nullptr),
-	vertexs(nullptr),
-	rgbColors(nullptr),
-	currentStatus(FILE_IS_NOT_OPEN)
+ObjFile::ObjFile(const std::string& file_name)noexcept:
+	file_name_(file_name)
 {
-	this->fileName = fileName;
-
-	ReadFile();
+	
+	open(file_name_);
+	
 }
 
 ObjFile::~ObjFile()
 {
-	delete[](RgbColor*) this->rgbColors;
-	delete[](Vertex3D*) this->vertexs;
-	delete[](Ratio*) this->polygons;
-	delete[](Normal3D*) this->normals;
+	
 
 }
-void ObjFile::OpenFile(const char* fileName) {
+void ObjFile::open(const std::string& file_name) {
 	
-	if (this->currentStatus == FILE_IS_OPEN_WITHOUT_ERRORS || this->currentStatus == DOUBLE_READING_FILE_EXCEPTION) {
-		
-		this->currentStatus = DOUBLE_READING_FILE_EXCEPTION;
-		throw DoubleReadingFileException(fileName, this->fileName);
-	
-	};
+	file_object_.open(file_name_, std::ios::in, std::ios::_Nocreate);
 
-	this->fileName = fileName;
-	this->ReadFile();
+	if (!file_object_.is_open()) throw ObjFileException(FileÑondition::FILE_OPEN_EXCEPTION, "File not opened.");
+
+	ReadFile();
 
 };
 void ObjFile::ReadFile() {
 
-	std::ifstream objFile;
-	objFile.open(this->fileName, std::ios::in, std::ios::_Nocreate);
-	if (!objFile.is_open()) throw FileOpenException(objFile.rdstate(), this->fileName);
-	this->fileObject = &objFile;
+	
+
+
 	AllocateMemory();
 	CopyData();
 	objFile.close();
