@@ -12,7 +12,7 @@ void display() {
 	float rotate_angle = 10;*/
 	//engineDisplayModeOfModel(0, SHOW);
 	                                
-	engineScaleModel(0, 50);
+	//engineScaleModel(0, 1);
 }
 
 
@@ -20,7 +20,7 @@ void display() {
 void processKeystrokes(KeyType key) {
 
 	const Vector3D rotate_vector(0.0f, 1.0f, 0.0f);
-	const Vertex3D rotate_vertex(0.0f, 0.0f, 0.0f);
+	const Vertex3D rotate_vertex(0.0f, 0.0f, 9.0f);
 
 	const Vertex3D translate_vertex_left(-1.0f, 0.0f, 0.0f);
 	const Vertex3D translate_vertex_right(1.0f, 0.0f, 0.0f);
@@ -45,27 +45,29 @@ void processKeystrokes(KeyType key) {
 			engineTranslateModel(0, translate_vertex_right);
 			break;
 		}
+
 		case W: {
 			engineTranslateModel(0, translate_vertex_up);
 			break;
 		}
+
 		case S: {
 			engineTranslateModel(0, translate_vertex_down);
 			break;
 		}
 		case ArrowLeft: {
-			engineRotateCamera(0, -1.0f, rotate_vector, rotate_vertex);
+			engineRotateModel(0, -1.0f, rotate_vector, rotate_vertex);
 			break;
 		}
 		case ArrowRight: {
-			engineRotateCamera(0, 1.0f, rotate_vector, rotate_vertex);
+			engineRotateModel(0, 1.0f, rotate_vector, rotate_vertex);
 			break;
 		}
-		case WheelDown: {
+		case ArrowDown: {
 			engineTranslateCamera(0, delta_vertex_first);
 			break;
 		}
-		case WheelUp: {
+		case ArrowUp: {
 			engineTranslateCamera(0, delta_vertex_second);
 			break;
 		}
@@ -82,7 +84,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	engineInitDisplayMode(RIBS_MODE, DOUBLE_BUFFERED_ON);
 	engineInitWindow(hInstance);
 	engineInitWindowSize(FULL_SCREEN, 1920, 1080);
-	engineLoad3DModel("__obj_models/ParallelPlane_4.obj", "body");
+	engineLoad3DModel("__obj_models/Parallel.obj", "body");
 	engineInitDisplayFunction(display);
 	engineInitSpecialFunction(processKeystrokes);
 	engineInitLogicFunction(logicFunction);

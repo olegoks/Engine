@@ -368,6 +368,15 @@ struct Device_vertex3D{
 	float y;
 	float z;
 };
+
+struct InEl {
+
+	int x;
+	int y;
+	float w;
+
+};
+
 __device__ float Dist_plane_vertex(const  Device_vertex3D& plane_v_1, const  Device_vertex3D& plane_v_2, const  Device_vertex3D& plane_v_3, const  Device_vertex3D& vertex) {
 
 	float A, B, C, D;
@@ -389,6 +398,13 @@ __device__ float Interpolate(float y1, float I1, float y2, float I2, float ya) {
 	return Ip;
 
 }
+
+__device__ float BiInterpolate(InEl el_1, InEl el_2, InEl el_3, int x, int y) {
+
+	//float fxy1 = 
+
+}
+
 __global__ void DrawPolygons(int* mutex_buffer, float* w_buffer, RgbPixel* display_buffer, Vertex2D* vertexs_2d, InfoForPainting info) {
 
 	int thread_index = threadIdx.x + blockDim.x * blockIdx.x;
@@ -507,7 +523,7 @@ __global__ void DrawPolygons(int* mutex_buffer, float* w_buffer, RgbPixel* displ
 			bool PixelInTriangle = InPositiveHalfPlane(pixel, bot, bot_mid) && InPositiveHalfPlane(pixel, mid, mid_top) && InPositiveHalfPlane(pixel, top, top_bot);
 
 			if (PixelInTriangle) {
-				/*
+				
 				Proj_vertex v[3];
 
 				for (int i = 0; i < 3; i++) v[i] = proj_vertexs[i];
@@ -518,7 +534,9 @@ __global__ void DrawPolygons(int* mutex_buffer, float* w_buffer, RgbPixel* displ
 			
 
 				float I1 = v[0]._z, I2 = v[1]._z, I3 = v[2]._z;
+
 				float X1 = v[0].x, X2 = v[1].x, X3 = v[2].x;
+
 
 				float Xa, Xb;
 				float Ia, Ib, Ip;
@@ -532,7 +550,7 @@ __global__ void DrawPolygons(int* mutex_buffer, float* w_buffer, RgbPixel* displ
 				else {
 
 					Ia = Interpolate(v[2].y, I3, v[1].y, I2, pixel.y);
-					Xa = Interpolate(v[2].y, v[2].x, v[1].y, v[1].x, pixel.y);
+					Xa = Interpolate(v[1].y, v[1].x, v[2].y, v[2].x, pixel.y);
 
 				}
 				
@@ -540,12 +558,11 @@ __global__ void DrawPolygons(int* mutex_buffer, float* w_buffer, RgbPixel* displ
 				Xb = Interpolate(v[0].y, v[0].x, v[2].y, v[2].x, pixel.y);
 				
 				Ip = Interpolate(Xa, Ia, Xb, Ib, pixel.x);
-				*/
-				//printf("%d  %d \n",x, y);
-				*(display_buffer + y * 1920 + x) = polygon_color;
 
-				/*
+
 				bool is_set = 0;
+
+
 				do
 				{	
 					
@@ -557,12 +574,11 @@ __global__ void DrawPolygons(int* mutex_buffer, float* w_buffer, RgbPixel* displ
 						if (Ip > *(w_buffer + y * 1920 + x)) {
 
 							RgbPixel grey;
-							grey.rgb_red = 256 - (int )Ip * 100;
-							grey.rgb_green = 256 - (int)Ip * 100;
-							grey.rgb_blue = 256 - (int)Ip * 100;
-							*(display_buffer + y * 1920 + x) = polygon_color;
-							//printf("%f %f %d %d %d\n", Ip, *(w_buffer + y * 1920 + x), polygon_color.rgb_blue, polygon_color.rgb_green, polygon_color.rgb_red);
-							//printf("%d %d %d \n",(display_buffer + y * 1920 + x)->rgb_blue);
+							grey.rgb_blue = (int)100.0f * Ip;
+							grey.rgb_green = (int)100.0f * Ip;
+							grey.rgb_red = (int)100.0f * Ip;
+							*(display_buffer + y * 1920 + x) = grey;
+
 
 						}
 						
@@ -570,12 +586,14 @@ __global__ void DrawPolygons(int* mutex_buffer, float* w_buffer, RgbPixel* displ
 
 					if (is_set)
 					{
-						
+
+						//atomicExch(mutex_buffer + 1920 * y + x, 0);
+
 						*(mutex_buffer + 1920 * y + x) = 0;
 					}
 
 				} while (!is_set);
-				*/
+				
 			}
 
 		index += info.threads_per_triangle;
