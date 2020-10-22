@@ -26,15 +26,11 @@ enum class File—ondition: uint8_t {
 
 class ObjFile final {
 
-	using PVertexs = std::shared_ptr<Vertex3D>;
-	using PNormals = std::shared_ptr<Vertex3D>;
-	using PPolygons = std::shared_ptr<Vertex3D>;
-	using PRgbColors = std::shared_ptr<Vertex3D>;
-	using PRatios = std::shared_ptr<Vertex3D>;
-	using FileObject = std::ifstream;
-	static struct FilePointers {
-
-	};
+	using PVertexs = Vertex3D*;
+	using PNormals = Normal3D*;
+	using PPolygons = Polygon3D*;
+	using PRgbColors = RgbColor*;
+	using PRatios = Ratio*;
 
 private:
 
@@ -44,17 +40,26 @@ private:
 	PRgbColors rgb_colors_ = nullptr;
 	PRatios ratios_ = nullptr;
 	
-	std::string file_name_ = "no_file_name.txt";
-	File—ondition condition_ = File—ondition::FILE_IS_NOT_OPEN;
-	FileObject file_object_;
+	size_t number_of_vertexs_ = 0;
+	size_t number_of_normals_ = 0;
+	size_t number_of_polygons_ = 0;
+	size_t number_of_rgb_colors_ = 0;
+	size_t number_of_ratios_ = 0;
 
-	void CountNumberOfPrimitives();
+	size_t number_of_lines_ = 0;
+
+	string file_name_ = "no_file_name.txt";
+	File—ondition condition_ = File—ondition::FILE_IS_NOT_OPEN;
+	std::ifstream file_object_;
+	RgbPixel current_polygon_color_;
+	void CountNumberOfPrimitives()noexcept;
+
 	void AllocateMemory();
 	void CopyData();
-	void ProcessLineWithVertex(string* newLine);
-	void ProcessLineWithNormal(string* newLine);
-	void ProcessLineWithPolygon(string* newLine);
-	void ProcessLineWithRgbColor(string* newLine);
+	void ProcessLineWithVertex(string& newLine, const size_t index);
+	void ProcessLineWithNormal(string& newLine, const size_t index);
+	void ProcessLineWithPolygon(string& newLine, const size_t index);
+	void ProcessLineWithRgbColor(string& newLine, const size_t index);
 	void ReadFile();
 
 public:
@@ -80,10 +85,6 @@ public:
 	explicit ObjFile(const std::string& file_name)noexcept;
 	~ObjFile();
 	void open(const std::string& file_name);
-	inline PVertexs ReturnVertexs()const noexcept { return vertexs_; };
-	inline PNormals ReturnNormals()const noexcept { return normals_; }
-	inline PPolygons ReturnPolygons()const noexcept { return polygons_; }
-	inline PRgbColors ReturnRgbColors()const noexcept { return rgb_colors_; }
 
 };
 
